@@ -409,6 +409,82 @@
                   </a-col>
                 </a-row>
                 
+                <!-- 语音合成高级设置 -->
+                <a-collapse :bordered="false" style="background: transparent; margin-bottom: 24px;" @change="handleTtsCollapseChange">
+                  <a-collapse-panel header="语音合成高级设置" key="1">
+                    <a-row :gutter="16">
+                      <a-col :xl="12" :lg="12" :xs="24">
+                        <a-form-item label="角色音调 (Pitch)" :labelCol="{ span: 8 }" :wrapperCol="{ span: 16 }">
+                          <a-tooltip placement="top">
+                            <template slot="title">
+                              <div>控制语音的音调高低：</div>
+                              <div>- 低值(0.5)：音调更低沉</div>
+                              <div>- 默认(1.0)：正常音调</div>
+                              <div>- 高值(2.0)：音调更高亢</div>
+                            </template>
+                            <div style="display: flex; align-items: center;">
+                              <a-slider 
+                                v-decorator="[
+                                  'ttsPitch',
+                                  { initialValue: 1.0 }
+                                ]" 
+                                :min="0.5" 
+                                :max="2.0" 
+                                :step="0.1" 
+                                style="flex: 1; margin-right: 16px;"
+                              />
+                              <a-input-number 
+                                v-decorator="[
+                                  'ttsPitch',
+                                  { initialValue: 1.0 }
+                                ]" 
+                                :min="0.5" 
+                                :max="2.0" 
+                                :step="0.1" 
+                                style="width: 80px;" 
+                              />
+                            </div>
+                          </a-tooltip>
+                        </a-form-item>
+                      </a-col>
+                      <a-col :xl="12" :lg="12" :xs="24">
+                        <a-form-item label="角色语速 (Speed)" :labelCol="{ span: 8 }" :wrapperCol="{ span: 16 }">
+                          <a-tooltip placement="top">
+                            <template slot="title">
+                              <div>控制语音的播放速度：</div>
+                              <div>- 低值(0.5)：语速较慢</div>
+                              <div>- 默认(1.0)：正常语速</div>
+                              <div>- 高值(2.0)：语速较快</div>
+                            </template>
+                            <div style="display: flex; align-items: center;">
+                              <a-slider 
+                                v-decorator="[
+                                  'ttsSpeed',
+                                  { initialValue: 1.0 }
+                                ]" 
+                                :min="0.5" 
+                                :max="2.0" 
+                                :step="0.1" 
+                                style="flex: 1; margin-right: 16px;"
+                              />
+                              <a-input-number 
+                                v-decorator="[
+                                  'ttsSpeed',
+                                  { initialValue: 1.0 }
+                                ]" 
+                                :min="0.5" 
+                                :max="2.0" 
+                                :step="0.1" 
+                                style="width: 80px;" 
+                              />
+                            </div>
+                          </a-tooltip>
+                        </a-form-item>
+                      </a-col>
+                    </a-row>
+                  </a-collapse-panel>
+                </a-collapse>
+                
                 <!-- 语音测试区域 -->
                 <a-row :gutter="20">
                   <a-col :xl="12" :lg="12" :xs="24">
@@ -643,6 +719,12 @@ export default {
         vadMinSilenceMs: 1200
       },
       
+      // TTS默认设置
+      defaultTtsSettings: {
+        ttsPitch: 1.0,
+        ttsSpeed: 1.0
+      },
+      
       // 默认配置
       defaultRole: null,
       defaultModelConfig: null,
@@ -656,6 +738,7 @@ export default {
       // 待设置的VAD参数（用于编辑时延迟设置）
       pendingVadValues: null,
       pendingModelValues: null,
+      pendingTtsValues: null,
     };
   },
   
@@ -1385,6 +1468,12 @@ export default {
           temperature: record.temperature !== null && record.temperature !== undefined ? record.temperature : 0.7,
           topP: record.topP !== null && record.topP !== undefined ? record.topP : 0.9,
         };
+        
+        // 准备折叠面板内的TTS参数值（延迟到用户展开时设置）
+        this.pendingTtsValues = {
+          ttsPitch: record.ttsPitch !== null && record.ttsPitch !== undefined ? record.ttsPitch : this.defaultTtsSettings.ttsPitch,
+          ttsSpeed: record.ttsSpeed !== null && record.ttsSpeed !== undefined ? record.ttsSpeed : this.defaultTtsSettings.ttsSpeed,
+        };
 
         // 设置表单基础值，将isDefault从数字转为布尔值
         roleForm.setFieldsValue({
@@ -1479,6 +1568,7 @@ export default {
       // 清空待设置的折叠面板值
       this.pendingVadValues = null;
       this.pendingModelValues = null;
+      this.pendingTtsValues = null;
       // 应用默认值
       this.applyDefaultValues();
     },
@@ -1509,6 +1599,10 @@ export default {
         // 模型默认参数
         temperature: 0.7,
         topP: 0.9,
+        
+        // TTS默认参数
+        ttsPitch: this.defaultTtsSettings.ttsPitch,
+        ttsSpeed: this.defaultTtsSettings.ttsSpeed,
       };
       
       // 如果有默认角色，使用默认角色的设置
@@ -1538,6 +1632,10 @@ export default {
           // 模型参数
           temperature: this.defaultRole.temperature || defaults.temperature,
           topP: this.defaultRole.topP || defaults.topP,
+          
+          // TTS参数
+          ttsPitch: this.defaultRole.ttsPitch || defaults.ttsPitch,
+          ttsSpeed: this.defaultRole.ttsSpeed || defaults.ttsSpeed,
         };
         
         // 如果是Edge，使用特殊标记
@@ -1635,7 +1733,7 @@ export default {
         return;
       }
 
-      this.roleForm.validateFields(['voiceName', 'ttsId', 'ttsProvider'], (err, values) => {
+      this.roleForm.validateFields(['voiceName', 'ttsId', 'ttsProvider', 'ttsPitch', 'ttsSpeed'], (err, values) => {
         if (err) {
           return;
         }
@@ -1646,7 +1744,9 @@ export default {
         const requestData = {
           voiceName: values.voiceName,
           provider: values.ttsProvider,
-          message: this.testText
+          message: this.testText,
+          ttsPitch: values.ttsPitch !== undefined ? values.ttsPitch : this.defaultTtsSettings.ttsPitch,
+          ttsSpeed: values.ttsSpeed !== undefined ? values.ttsSpeed : this.defaultTtsSettings.ttsSpeed
         };
 
         // 普通TTS配置
@@ -1806,6 +1906,19 @@ export default {
           this.roleForm.setFieldsValue(this.pendingModelValues);
           // 清空待设置的值
           this.pendingModelValues = null;
+        });
+      }
+    },
+    
+    // 处理TTS折叠面板变化
+    handleTtsCollapseChange(activeKeys) {
+      // 当折叠面板展开时（activeKeys包含'1'）
+      if (activeKeys && activeKeys.includes('1') && this.pendingTtsValues) {
+        // 使用 $nextTick 确保DOM已更新
+        this.$nextTick(() => {
+          this.roleForm.setFieldsValue(this.pendingTtsValues);
+          // 清空待设置的值
+          this.pendingTtsValues = null;
         });
       }
     },

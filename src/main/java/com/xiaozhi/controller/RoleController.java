@@ -109,13 +109,15 @@ public class RoleController extends BaseController {
         @Parameter(description = "消息文本") String message, 
         @Parameter(description = "语音合成提供方") String provider, 
         @Parameter(description = "TTS ID") Integer ttsId, 
-        @Parameter(description = "音色名称") String voiceName) {
+        @Parameter(description = "音色名称") String voiceName,
+        @Parameter(description = "语音音调(0.5-2.0)") Float ttsPitch,
+        @Parameter(description = "语音语速(0.5-2.0)") Float ttsSpeed) {
         SysConfig config = null;
         try {
             if (!provider.equals("edge")) {
                 config = configService.selectConfigById(ttsId);
             }
-            String audioFilePath = ttsService.getTtsService(config, voiceName).textToSpeech(message);
+            String audioFilePath = ttsService.getTtsService(config, voiceName, ttsPitch, ttsSpeed).textToSpeech(message);
             AjaxResult result = AjaxResult.success();
             result.put("data", audioFilePath);
             return result;

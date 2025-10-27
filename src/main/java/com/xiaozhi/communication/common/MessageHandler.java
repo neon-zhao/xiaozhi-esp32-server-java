@@ -122,7 +122,7 @@ public class MessageHandler {
                     if (role.getTtsId() != null) {
                         SysConfig ttsConfig = configService.selectConfigById(role.getTtsId());
                         if (ttsConfig != null) {
-                            ttsFactory.getTtsService(ttsConfig, role.getVoiceName());// 提前初始化，加速后续使用
+                            ttsFactory.getTtsService(ttsConfig, role.getVoiceName(), role.getTtsPitch(), role.getTtsSpeed());// 提前初始化，加速后续使用
                         }
                     }
                     if (role.getModelId() != null) {

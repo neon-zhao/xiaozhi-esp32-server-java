@@ -4,6 +4,7 @@
 
     <sql id="roleSql">
         sys_role.roleId, sys_role.avatar, sys_role.roleName, sys_role.roleDesc, sys_role.voiceName,
+        sys_role.ttsPitch, sys_role.ttsSpeed,
         sys_role.modelId, sys_role.sttId, sys_role.ttsId,
         sys_role.vadSpeechTh, sys_role.vadSilenceTh, sys_role.vadEnergyTh, sys_role.vadSilenceMs,
         sys_role.userId, sys_role.state, sys_role.isDefault, sys_role.createTime
@@ -67,6 +68,8 @@
             <if test="vadSpeechTh != null and vadSpeechTh != ''">vadSpeechTh = #{vadSpeechTh},</if>
             <if test="vadSilenceTh != null and vadSilenceTh != ''">vadSilenceTh = #{vadSilenceTh},</if>
             <if test="vadSilenceMs != null and vadSilenceMs != ''">vadSilenceMs = #{vadSilenceMs},</if>
+            <if test="ttsPitch != null and ttsPitch != ''">ttsPitch = #{ttsPitch},</if>
+            <if test="ttsSpeed != null and ttsSpeed != ''">ttsSpeed = #{ttsSpeed},</if>
         </set>
         WHERE
             roleId = #{roleId}
@@ -83,11 +86,13 @@
     </update>
 
     <insert id="add" useGeneratedKeys="true" keyProperty="roleName" parameterType="com.xiaozhi.entity.SysRole">
-        INSERT INTO sys_role ( avatar, roleName, roleDesc, voiceName, modelId, ttsId, sttId, userId, isDefault ) VALUES (
+        INSERT INTO sys_role ( avatar, roleName, roleDesc, voiceName, ttsPitch, ttsSpeed, modelId, ttsId, sttId, userId, isDefault ) VALUES (
             #{avatar},
             #{roleName},
             #{roleDesc},
             #{voiceName},
+            #{ttsPitch},
+            #{ttsSpeed},
             #{modelId},
             <choose>
                 <when test="ttsId == -1">null</when>

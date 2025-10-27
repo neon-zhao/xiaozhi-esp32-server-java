@@ -231,6 +231,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         private final boolean isLast;
         private final SysConfig ttsConfig;
         private final String voiceName;
+        private final Float ttsPitch;
+        private final Float ttsSpeed;
         private final ChatSession session;
         private final long createTime;
         private int retryCount = 0;
@@ -238,7 +240,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
         public TtsTask(ChatSession session, String sessionId, Sentence sentence,
                 EmoSentence emoSentence, boolean isFirst, boolean isLast,
-                SysConfig ttsConfig, String voiceName) {
+                SysConfig ttsConfig, String voiceName, Float ttsPitch, Float ttsSpeed) {
             this.session = session;
             this.sessionId = sessionId;
             this.sentence = sentence;
@@ -247,6 +249,8 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             this.isLast = isLast;
             this.ttsConfig = ttsConfig;
             this.voiceName = voiceName;
+            this.ttsPitch = ttsPitch;
+            this.ttsSpeed = ttsSpeed;
             this.createTime = System.currentTimeMillis();
         }
 
@@ -576,7 +580,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
 
         // 使用虚拟线程异步生成音频文件
         Thread.startVirtualThread(() -> {
-            generateAudio(session, sessionId, sentence, emoSentence, isFirst, isLast, ttsConfig, voiceName);
+            generateAudio(session, sessionId, sentence, emoSentence, isFirst, isLast, ttsConfig, voiceName, role.getTtsPitch(), role.getTtsSpeed());
         });
     }
 
@@ -592,11 +596,13 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
             boolean isFirst,
             boolean isLast,
             SysConfig ttsConfig,
-            String voiceName) {
+            String voiceName,
+            Float ttsPitch,
+            Float ttsSpeed) {
 
         // 创建TTS任务
         TtsTask task = new TtsTask(session, sessionId, sentence, emoSentence,
-                isFirst, isLast, ttsConfig, voiceName);
+                isFirst, isLast, ttsConfig, voiceName, ttsPitch, ttsSpeed);
 
         // 提交任务到队列
         submitTtsTask(task);
@@ -658,7 +664,7 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
         CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
             try {
                 long ttsStartTime = System.currentTimeMillis();
-                String audioPath = ttsFactory.getTtsService(task.ttsConfig, task.voiceName)
+                String audioPath = ttsFactory.getTtsService(task.ttsConfig, task.voiceName, task.ttsPitch, task.ttsSpeed)
                         .textToSpeech(task.emoSentence.getTtsSentence());
                 long ttsDuration = System.currentTimeMillis() - ttsStartTime;
 
@@ -752,7 +758,9 @@ public class DialogueService implements ApplicationListener<ChatSessionCloseEven
                 task.isFirst, 
                 task.isLast, 
                 task.ttsConfig, 
-                task.voiceName
+                task.voiceName,
+                task.ttsPitch,
+                task.ttsSpeed
             );
             retryTask.retryCount = task.retryCount;
             retryTask.isRetry = true;
