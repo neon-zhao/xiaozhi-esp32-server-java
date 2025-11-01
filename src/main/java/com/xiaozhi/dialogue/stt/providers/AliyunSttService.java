@@ -68,7 +68,7 @@ public class AliyunSttService implements SttService {
                                     emitter::onComplete
                             );
                         }, BackpressureStrategy.BUFFER))
-                        .timeout(5, TimeUnit.SECONDS)
+                        .timeout(90, TimeUnit.SECONDS)
                         .subscribe(result -> {
                                     if (result.isSentenceEnd()) {
                                         logger.info("语音识别结果: {}", result.getSentence().getText());
