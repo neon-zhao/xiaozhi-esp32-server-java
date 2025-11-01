@@ -86,6 +86,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 | **拍照识图** | ✅ | 支持图像识别和处理，实现更丰富的交互方式 |
 | **实时打断** | ✅ | 支持实时打断功能，提高对话流畅度 |
 | **记忆管理** | ✅ | 自定义记忆对话条数、历史对话总结/摘要功能、手动操作对话记录 |
+| **多语言支持** | ✅ | 支持多语言界面，满足不同地区用户需求 |
 
 ### 商业版功能 💼
 
@@ -108,14 +109,13 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 | **监控面板** | ✅ | 监控日、周、月不同维度Token，对话时长，设备活跃等数据 |
 | **OTA固件升级** | ✅ | 固件上传，自动升级，远程设备管理 |
 | **聊天数据可视化** | ✅ | 聊天频率统计图表等数据可视化功能，监控对话数据趋势 |
+| **混合模式角色** | ✅ | 支持多角色混合模式，通过不同唤醒词唤醒不同角色（自动切换） |
 
 ### 开发中功能 🚧
 
 | 功能模块 | 状态 | 描述 |
 |---------|------|------|
-| **混合模式角色** | 🚧 | 支持多角色混合模式，通过不同唤醒词唤醒不同角色（自动切换） |
 | **声纹识别** | 🚧 | 支持声纹识别功能，实现个性化语音助手 |
-| **多语言支持** | 🚧 | 支持多语言界面，满足不同地区用户需求 |
 | **Home Assistant** | 🚧 | 支持智能家居设备控制，通过语音指令管理Home Assistant设备 |
 | **情感分析** | 🚧 | 通过语音情感分析，提供更人性化的回复 |
 | **自定义插件系统** | 🚧 | 支持自定义插件开发，扩展系统功能 |
@@ -126,35 +126,109 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 ## UI 展示 🎨
 
-<div align="center">
-    <img src="docs/images/device.jpg" alt="设备管理" width="600" style="margin: 10px;" />
-    <p><strong>设备管理</strong> - 全面管理和监控所有连接设备</p>
-</div>
+### 核心功能展示
 
-<details>
-  <summary style="cursor: pointer; font-size: 1.2em; color: #0366d6; text-align: center; display: block; margin: 20px 0; padding: 10px; background-color:rgb(48, 48, 48); border-radius: 5px;">
-    <strong>👉 点击查看更多界面截图 👈</strong>
-  </summary>
-  
-  <div align="center">
-    <img src="docs/images/login.jpg" alt="登录界面" width="600" style="margin: 10px;" />
-    <p><strong>登录界面</strong> - 安全访问系统的入口</p>
-    <img src="docs/images/dashboard.jpg" alt="仪表盘" width="600" style="margin: 10px;" />
-    <p><strong>仪表盘</strong> - 系统概览和关键数据展示</p>
-    <img src="docs/images/user.jpg" alt="用户管理" width="600" style="margin: 10px;" />
-    <p><strong>用户管理</strong> - 管理用户信息和权限</p>
-    <img src="docs/images/message.jpg" alt="消息记录" width="600" style="margin: 10px;" />
-    <p><strong>消息记录</strong> - 查看和搜索历史对话内容</p>
-    <img src="docs/images/model.jpg" alt="模型管理" width="600" style="margin: 10px;" />
-    <p><strong>模型管理</strong> - 配置和管理AI模型</p>
-    <img src="docs/images/agent.jpg" alt="智能体管理" width="600" style="margin: 10px;" />
-    <p><strong>智能体管理</strong> - 设置和切换智能体，Coze/Dify</p>
-    <img src="docs/images/role.jpg" alt="角色管理" width="600" style="margin: 10px;" />
-    <p><strong>角色管理</strong> - 设置和切换AI角色</p>
-    <img src="docs/images/voiceClone.jpg" alt="音色克隆" width="600" style="margin: 10px;" />
-    <p><strong>音色克隆</strong> - 克隆自己的声音，实现个性化语音助手</p>
-  </div>
-</details>
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/device.jpg" alt="设备管理" />
+      <p align="center"><strong>设备管理</strong> - 全面管理和监控所有连接设备</p>
+    </td>
+    <td width="50%">
+      <img src="docs/images/message.jpg" alt="消息记录" />
+      <p align="center"><strong>消息记录</strong> - 查看和搜索历史对话内容</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/voiceClone.jpg" alt="音色克隆" />
+      <p align="center"><strong>音色克隆</strong> - 克隆自己的声音，实现个性化语音助手</p>
+    </td>
+    <td width="50%">
+      <img src="docs/images/mcpServer.jpg" alt="MCP服务管理" />
+      <p align="center"><strong>MCP服务</strong> - SSE MCP服务管理，管理MCP工具</p>
+    </td>
+  </tr>
+</table>
+
+### 更多功能界面
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="16.66%">
+        <a href="docs/images/login.jpg">
+          <img src="docs/images/login.jpg" width="130" /><br/>
+          <sub>登录界面</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/dashboard.jpg">
+          <img src="docs/images/dashboard.jpg" width="130" /><br/>
+          <sub>仪表盘</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/agent.jpg">
+          <img src="docs/images/agent.jpg" width="130" /><br/>
+          <sub>智能体</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/llm.jpg">
+          <img src="docs/images/llm.jpg" width="130" /><br/>
+          <sub>模型配置</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/ota.jpg">
+          <img src="docs/images/ota.jpg" width="130" /><br/>
+          <sub>固件升级</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/role.jpg">
+          <img src="docs/images/role.jpg" width="130" /><br/>
+          <sub>角色管理</sub>
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="16.66%">
+        <a href="docs/images/mcpTools.jpg">
+          <img src="docs/images/mcpTools.jpg" width="130" /><br/>
+          <sub>MCP工具</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/membership.jpg">
+          <img src="docs/images/membership.jpg" width="130" /><br/>
+          <sub>会员管理</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/privilege.jpg">
+          <img src="docs/images/privilege.jpg" width="130" /><br/>
+          <sub>权益管理</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/stt.jpg">
+          <img src="docs/images/stt.jpg" width="130" /><br/>
+          <sub>语音识别</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%">
+        <a href="docs/images/tts.jpg">
+          <img src="docs/images/tts.jpg" width="130" /><br/>
+          <sub>语音合成</sub>
+        </a>
+      </td>
+      <td align="center" width="16.66%"></td>
+    </tr>
+  </table>
+  <sub>💡 点击缩略图查看大图</sub>
+</div>
 
 ---
 
