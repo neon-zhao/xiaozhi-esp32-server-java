@@ -57,7 +57,7 @@ const columns = computed(() => [
     width: 120
   },
   {
-    title: t('device.roleName'),
+    title: t('role.roleName'),
     dataIndex: 'roleName',
     key: 'roleName',
     align: 'center' as const,
@@ -136,13 +136,14 @@ const getSentence = () => {
   const day = dayjs().format('YYYY-MM-DD')
   jsonp(`https://sentence.iciba.com/index.php?c=dailysentence&m=getdetail&title=${day}`, {
     param: 'callback'
-  }, (err: Error | null, data: { content?: string; note?: string } | null) => {
+  }, (err: Error | null, data: unknown) => {
     if (err) {
       console.log(t('dashboard.getSentenceFailed'))
     } else {
+      const result = data as { content?: string; note?: string } | null
       sentence.value = {
-        content: data?.content || sentence.value.content,
-        note: data?.note || sentence.value.note
+        content: result?.content || sentence.value.content,
+        note: result?.note || sentence.value.note
       }
     }
   })

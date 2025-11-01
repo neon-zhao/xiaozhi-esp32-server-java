@@ -121,9 +121,10 @@ export function useRoleManager() {
       }
 
       // 2. 并行加载所有语音JSON文件
-      const [edgeVoices, aliyunVoices, volcengineVoices, xfyunVoices, minimaxVoices] = await Promise.all([
+      const [edgeVoices, aliyunVoices, aliyunNlsVoices, volcengineVoices, xfyunVoices, minimaxVoices] = await Promise.all([
         loadVoiceJson('/static/assets/edgeVoicesList.json', 'edge'),
         loadVoiceJson('/static/assets/aliyunVoicesList.json', 'aliyun'),
+        loadVoiceJson('/static/assets/aliyunNlsVoicesList.json', 'aliyun-nls'),
         loadVoiceJson('/static/assets/volcengineVoicesList.json', 'volcengine'),
         loadVoiceJson('/static/assets/xfyunVoicesList.json', 'xfyun'),
         loadVoiceJson('/static/assets/minimaxVoicesList.json', 'minimax')
@@ -141,6 +142,7 @@ export function useRoleManager() {
       // 其他提供商的语音（需要关联TTS配置）
       const providerVoicesMap = {
         aliyun: aliyunVoices,
+        'aliyun-nls': aliyunNlsVoices,
         volcengine: volcengineVoices,
         xfyun: xfyunVoices,
         minimax: minimaxVoices
@@ -157,14 +159,10 @@ export function useRoleManager() {
               ttsId: ttsConfig.configId
             })
           })
-          console.log(`已加载 ${provider} 提供商的 ${providerVoices.length} 个音色`)
-        } else {
-          console.warn(`未找到 ${provider} 提供商的TTS配置，跳过 ${providerVoices.length} 个音色`)
         }
       })
 
       allVoices.value = voices
-      console.log(`音色加载完成，共 ${voices.length} 个音色`)
     } catch (error) {
       console.error('加载语音列表失败:', error)
       message.error('加载语音列表失败')
@@ -277,6 +275,7 @@ export function useRoleManager() {
     const names: Record<string, string> = {
       edge: '微软Edge',
       aliyun: '阿里云',
+      'aliyun-nls': '阿里云NLS',
       volcengine: '火山引擎',
       xfyun: '讯飞云',
       minimax: 'Minimax',
@@ -293,6 +292,7 @@ export function useRoleManager() {
     const colors: Record<string, string> = {
       edge: 'green',
       aliyun: 'orange',
+      'aliyun-nls': 'orange',
       volcengine: 'blue',
       xfyun: 'cyan',
       minimax: 'red'

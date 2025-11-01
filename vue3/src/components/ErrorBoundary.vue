@@ -148,13 +148,13 @@ provide('resetError', resetError)
 .error-title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--text-color, #333);
+  color: var(--ant-color-text);
   margin-bottom: 16px;
 }
 
 .error-message {
   font-size: 16px;
-  color: var(--text-color-secondary, #666);
+  color: var(--ant-color-text-secondary);
   margin-bottom: 32px;
   word-break: break-word;
 }
@@ -182,7 +182,7 @@ provide('resetError', resetError)
       user-select: none;
       
       &:hover {
-        color: var(--primary-color, #1890ff);
+        color: var(--ant-color-primary);
       }
     }
 

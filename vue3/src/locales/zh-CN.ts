@@ -36,17 +36,40 @@ export default {
     upload: '上传',
     view: '查看',
     copy: '复制',
+    copySuccess: '复制成功',
+    copyFailed: '复制失败',
+    more: '更多',
     clear: '清空',
     filter: '筛选',
     sort: '排序',
     pleaseSelect: '请选择',
+    pleaseEnter: '请输入',
+    selectAll: '全选',
+    deselectAll: '取消全选',
+    pleaseSelectData: '请选择数据',
     confirmSave: '确定保存？',
+    confirmDelete: '确定删除？',
+    confirmDeleteMessage: '删除后无法恢复，确定要删除吗？',
+    confirmBatchDelete: '批量删除确认',
+    confirmBatchDeleteMessage: '确定要删除选中的 {count} 条记录吗？此操作不可恢复！',
+    batchDeleteSuccess: '成功删除 {count} 条记录',
+    batchDeleteFailed: '删除 {count} 条记录失败',
+    confirmOperation: '确定要执行此操作吗？',
+    confirmCancel: '确定取消？',
+    confirmCancelMessage: '取消后将丢失未保存的更改',
+    confirmSubmit: '确定提交？',
+    confirmSubmitMessage: '提交后将无法修改',
     setAsDefault: '设为默认',
     user: '用户',
     password: '密码',
     personalCenter: '个人中心',
     personalSettings: '个人设置',
     logout: '退出登录',
+    warningMessage: '请注意相关风险',
+    infoMessage: '操作提示',
+    successMessage: '操作成功',
+    errorMessage: '操作失败',
+    loadDataFailed: '加载数据失败',
     // 通用字段
     avatar: '头像',
     name: '名称',
@@ -74,6 +97,27 @@ export default {
     setDefaultSuccess: '已将"{name}"设为默认',
     setDefaultFailed: '设置默认失败',
     operationFailed: '操作失败',
+    unknownError: '未知错误',
+    // 通用操作结果提示
+    exportSuccess: '导出成功',
+    exportFailed: '导出失败',
+    deleteSuccess: '删除成功',
+    deleteFailed: '删除失败',
+    saveSuccess: '保存成功',
+    saveFailed: '保存失败',
+    updateSuccess: '更新成功',
+    updateFailed: '更新失败',
+    addSuccess: '添加成功',
+    addFailed: '添加失败',
+    createSuccess: '创建成功',
+    createFailed: '创建失败',
+    // 通用进行中状态
+    exporting: '正在导出...',
+    deleting: '正在删除...',
+    saving: '正在保存...',
+    updating: '正在更新...',
+    adding: '正在添加...',
+    serverMaintenance: '服务器维护/重启中，请稍后再试',
     // 通用占位符
     enterUsername: '请输入用户名',
     enterEmail: '请输入邮箱',
@@ -88,6 +132,52 @@ export default {
     addPlatformConfigSuccess: '添加平台配置成功',
     updatePlatformConfigFailed: '更新平台配置失败',
     addPlatformConfigFailed: '添加平台配置失败',
+    // 音频相关
+    audioUrlInvalid: '音频URL无效',
+    audioPlayFailed: '音频播放失败',
+    audioPathInvalid: '音频路径无效',
+    audioTestFailed: '音频测试失败',
+    audioGenerateFailed: '音频生成失败',
+    audioNotGenerated: '音频未生成',
+    audioUploadFailed: '音频上传失败',
+    audioFormatError: '只能上传WAV或MP3格式的音频文件',
+    audioSizeError: '音频文件不能超过10MB',
+    audioProcessFailed: '处理音频失败',
+  },
+
+  upload: {
+    selectFile: '选择文件',
+    uploading: '上传中...',
+    uploadSuccess: '上传成功',
+    uploadFailed: '上传失败',
+    fileTypeError: '文件类型不符合要求',
+    fileSizeError: '文件大小超出限制',
+    avatarTypeError: '只能上传图片文件',
+    avatarSizeError: '图片大小不能超过 2MB',
+    audioTypeError: '只能上传 .wav 或 .mp3 格式的音频文件',
+    audioSizeError: '音频文件大小不能超过 10MB',
+    invalidFileType: '不支持的文件类型：{types}',
+    fileTooLarge: '文件大小不能超过 {size}MB',
+    validationFailed: '文件验证失败',
+    noFilesToUpload: '没有可上传的文件',
+    success: '上传成功',
+    failed: '上传失败',
+  },
+  
+  export: {
+    noData: '暂无数据可导出',
+    exporting: '正在导出...',
+    success: '导出成功',
+    failed: '导出失败',
+  },
+  
+  clipboard: {
+    copySuccess: '复制成功',
+    copyFailed: '复制失败',
+    pasteNotSupported: '您的浏览器不支持读取剪贴板',
+    pasteFailed: '读取剪贴板失败',
+    jsonError: 'JSON 序列化失败',
+    imageNotSupported: '您的浏览器不支持复制图片',
   },
 
   menu: {
@@ -102,6 +192,7 @@ export default {
     agent: '智能体管理',
     sttConfig: '语音识别配置',
     ttsConfig: '语音合成配置',
+    chat: '聊天',
     setting: '设置',
     account: '个人中心',
     personalConfig: '个人设置',
@@ -146,11 +237,15 @@ export default {
     sendVerificationCode: '发送验证码',
     enterEmailFirst: '请先输入邮箱地址！',
     enterValidEmail: '请输入正确的邮箱格式！',
-    verificationCodeSent: '验证码已发送到您的邮箱！',
+    verificationCodeSent: '验证码已发送！',
     sendVerificationCodeFailed: '发送验证码失败！',
     sendVerificationCodeRetry: '发送验证码失败，请稍后重试',
     verificationSuccess: '验证成功！',
     verificationCodeError: '验证码错误',
+    // 手机号登录相关
+    mobilePhone: '手机号',
+    enterMobilePhone: '请输入手机号',
+    useAccountLogin: '使用账号密码登录',
   },
 
   user: {
@@ -172,10 +267,15 @@ export default {
 
 
   device: {
+    online: '在线',
+    standby: '待机',
+    offline: '离线',
+    unknown: '未知',
     deviceId: '设备ID',
     deviceName: '设备名称',
     deviceType: '设备类型',
     onlineStatus: '在线',
+    standbyStatus: '待机',
     offlineStatus: '离线',
     lastOnlineTime: '最后在线时间',
     owner: '所有者',
@@ -188,7 +288,15 @@ export default {
     configureDefaultRole: '请先配置默认角色',
     version: '版本号',
     activeTime: '活跃时间',
-    // 角色相关
+    // 设备详情弹窗相关
+    deviceDetails: '设备详情',
+    bindRole: '绑定角色',
+    confirmClearMemory: '确定要清除该设备的所有对话记忆吗？此操作不可恢复。',
+    clearMemory: '清除记忆',
+  },
+
+  role: {
+    // 角色基本信息
     roleName: '角色名称',
     roleDesc: '角色描述',
     voiceName: '音色',
@@ -201,6 +309,8 @@ export default {
     enterRoleName: '请输入角色名称',
     setAsDefaultRole: '设为默认角色',
     defaultRoleTip: '设为默认后将优先使用此角色',
+    
+    // 对话模型设置
     conversationModelSettings: '对话模型设置',
     modelType: '模型类型',
     llmModel: 'LLM模型',
@@ -212,6 +322,8 @@ export default {
     temperatureTip: '控制回答的创造性：\n- 低值(0.2)：更精确保守\n- 高值(0.8)：更有创意多样',
     topP: '核心采样',
     topPTip: '控制词汇选择范围：\n- 低值(0.5)：更聚焦\n- 高值(0.9)：考虑更多可能性',
+    
+    // 语音识别设置
     speechRecognitionSettings: '语音识别设置',
     speechRecognition: '语音识别',
     selectSpeechRecognition: '请选择语音识别配置',
@@ -220,16 +332,22 @@ export default {
     silenceThreshold: '静音阈值',
     energyThreshold: '能量阈值',
     silenceDuration: '静音时长',
+    
+    // 语音合成设置
     voiceSynthesisSettings: '语音合成设置',
     selectVoice: '请选择音色',
+    
+    // 角色提示词
     rolePrompt: '角色提示词(Prompt)',
     agentPrompt: '智能体模式下使用智能体自带的提示词，无需额外设置',
-    agentPromptDesc: '智能体已包含预设的提示词和知识库，将自动使用智能体的描述作为角色提示词',
+    agentPromptDesc: '智能体已包含预设的提示词，将自动使用智能体的描述作为角色提示词',
     useTemplate: '使用模板',
     custom: '自定义',
     selectTemplate: '选择模板',
     templateManagement: '模板管理',
     enterRolePrompt: '请输入角色提示词，描述角色的特点、知识背景和行为方式等',
+    
+    // 操作相关
     cancel: '取消',
     confirmDeleteRole: '确定要删除这个角色吗?',
     deleteRole: '删除角色',
@@ -241,16 +359,15 @@ export default {
     createRoleSuccess: '创建成功',
     updateRoleSuccess: '更新成功',
     checkForm: '请检查表单填写是否正确',
+    
+    // 音色测试相关
     voiceNotFound: '未找到音色信息',
-    audioUrlInvalid: '音频URL无效',
-    audioPlayFailed: '音频播放失败',
     getTestAudioFailed: '获取测试音频失败',
     playVoiceFailed: '播放音色失败',
     loadTemplateFailed: '加载模板列表失败',
     voskLocalRecognition: 'Vosk本地识别',
-    unknown: '未知',
     unknownModel: '未知模型',
-    voiceTestMessage: '您好，我是您的语音助手，很高兴为您服务',
+    voiceTestMessage: '您好，我是您的语音助手，很高兴为您服务'
   },
 
   template: {
@@ -328,9 +445,9 @@ export default {
     assistant: '助手',
     system: '系统',
     // 消息页面专用
-    messageSender: '消息发送方',
+    messageSender: '发送方',
     messageContent: '消息内容',
-    voice: '语音',
+    voice: '音频',
     conversationTime: '对话时间',
     conversationDate: '对话日期',
     queryTable: '查询表格',
@@ -338,25 +455,6 @@ export default {
     confirmDeleteMessage: '确定要删除此消息吗？',
     today: '今天',
     thisMonth: '本月',
-    prompt: {
-      exportSuccess: '导出成功',
-      exportFailed: '导出失败',
-      deleteSuccess: '删除成功',
-      deleteFailed: '删除失败',
-      saveSuccess: '保存成功',
-      saveFailed: '保存失败',
-      updateSuccess: '更新成功',
-      updateFailed: '更新失败',
-      addSuccess: '添加成功',
-      addFailed: '添加失败',
-      loading: '正在加载...',
-      exporting: '正在导出数据...',
-      deleting: '正在删除...',
-      saving: '正在保存...',
-      updating: '正在更新...',
-      adding: '正在添加...',
-      serverMaintenance: '服务器维护/重启中，请稍后再试',
-    },
   },
 
     agent: {
@@ -477,11 +575,16 @@ export default {
     notFound: '请求的资源不存在',
     timeout: '请求超时',
     unknown: '未知错误',
+    noPermission: '您没有权限访问此页面',
+    permissionDenied: '权限不足，请联系管理员',
+    loginRequired: '请先登录',
+    sessionExpired: '登录已过期，请重新登录',
   },
 
   table: {
     index: '序号',
     action: '操作',
+    uploadTime: '上传时间',
     total: '共 {total} 条',
     noData: '暂无数据',
   },
@@ -523,6 +626,7 @@ export default {
       agent: '智能体管理',
       sttConfig: '语音识别配置',
       ttsConfig: '语音合成配置',
+      chat: '聊天',
       account: '个人中心',
       personalConfig: '个人设置',
       error403: '403 - 无权限',
@@ -596,7 +700,6 @@ export default {
       online: '在线',
       offline: '离线',
     },
-
   },
-}
 
+}

@@ -10,11 +10,11 @@ export interface PromptTemplate {
   updateTime?: string
 }
 
-export interface TemplateQuery {
+import type { BaseQueryParams } from './api'
+
+export interface TemplateQuery extends BaseQueryParams {
   templateName?: string
   category?: string
-  start?: number
-  limit?: number
 }
 
 export interface TemplateFormData {
@@ -30,4 +30,3 @@ export interface CategoryOption {
   label: string
   value: string
 }
-

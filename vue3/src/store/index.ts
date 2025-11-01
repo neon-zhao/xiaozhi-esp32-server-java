@@ -10,6 +10,6 @@ export { usePermissionStore } from './permission'
 
 // 导出类型
 export type { UserInfo, WebSocketConfig } from './user'
-export type { Theme, Locale } from './app'
+export type { Locale } from './app'
 export type { Permission } from './permission'
 

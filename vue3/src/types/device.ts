@@ -40,41 +40,22 @@ export interface Device {
   editable?: boolean // 表格编辑状态
 }
 
+import type { PageQueryParams } from './api'
+
 /**
  * 设备查询参数
  */
-export interface DeviceQueryParams {
-  start: number
-  limit: number
+export interface DeviceQueryParams extends PageQueryParams {
   deviceId?: string
   deviceName?: string
   roleName?: string
   state?: string | number
+  // 重写 start 和 limit 为可选
+  start?: number
+  limit?: number
 }
 
-/**
- * 设备列表响应
- */
-export interface DeviceListResponse {
-  list: Device[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
-}
+// 移除重复的响应类型定义，使用统一的 PageResponse<Device>
 
 /**
  * 角色信息接口
@@ -88,29 +69,5 @@ export interface Role {
   ttsVoice?: string
   createTime?: string
   updateTime?: string
-}
-
-/**
- * 角色列表响应
- */
-export interface RoleListResponse {
-  list: Role[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
 }
 

@@ -1,11 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { useStorage, usePreferredDark } from '@vueuse/core'
-
-/**
- * 主题类型
- */
-export type Theme = 'light' | 'dark' | 'auto'
+import { useStorage } from '@vueuse/core'
 
 /**
  * 语言类型
@@ -14,24 +9,9 @@ export type Locale = 'zh-CN' | 'en-US'
 
 /**
  * 应用全局状态 Store
- * 管理主题、语言、布局等全局配置
+ * 管理语言、布局等全局配置
  */
 export const useAppStore = defineStore('app', () => {
-  // ========== 主题管理 ==========
-  const themeMode = useStorage<Theme>('theme-mode', 'auto')
-  const prefersDark = usePreferredDark()
-
-  // 计算实际应用的主题
-  const actualTheme = computed(() => {
-    if (themeMode.value === 'auto') {
-      return prefersDark.value ? 'dark' : 'light'
-    }
-    return themeMode.value
-  })
-
-  const setTheme = (theme: Theme) => {
-    themeMode.value = theme
-  }
 
   // ========== 布局管理 ==========
   // 侧边栏折叠状态
@@ -42,6 +22,10 @@ export const useAppStore = defineStore('app', () => {
 
   // 导航风格
   const navigationStyle = useStorage<'tabs' | 'sidebar'>('navigation-style', 'sidebar')
+
+  // 屏幕尺寸
+  const screenWidth = ref(window.innerWidth)
+  const screenHeight = ref(window.innerHeight)
 
   const toggleSidebar = () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
@@ -59,6 +43,12 @@ export const useAppStore = defineStore('app', () => {
     navigationStyle.value = style
   }
 
+  const updateScreenSize = () => {
+    screenWidth.value = window.innerWidth
+    screenHeight.value = window.innerHeight
+    isMobile.value = window.innerWidth < 768
+  }
+
   // ========== 页面设置 ==========
   const pageTitle = ref<string>('')
 
@@ -69,19 +59,17 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    // 主题
-    themeMode,
-    actualTheme,
-    setTheme,
-    
     // 布局
     sidebarCollapsed,
     isMobile,
     navigationStyle,
+    screenWidth,
+    screenHeight,
     toggleSidebar,
     setSidebarCollapsed,
     setMobile,
     setNavigationStyle,
+    updateScreenSize,
     
     // 页面
     pageTitle,

@@ -29,8 +29,8 @@ export function setupRouterGuards(router: Router) {
     }
 
     const userStore = useUserStore()
-    const hasToken = !!userStore.userInfo
-    const isAdmin = String(userStore.userInfo?.isAdmin) === '1'
+    const hasToken = !!userStore.token
+    const { isAdmin } = userStore
 
     // 1. 未登录处理
     if (!hasToken) {
@@ -55,12 +55,45 @@ export function setupRouterGuards(router: Router) {
 
     // 3. 权限检查
     if (to.meta.requiresAuth) {
+      // 检查用户信息是否完整（如果有token但没有用户信息，说明登录信息已失效）
+      if (!userStore.userInfo || !userStore.userInfo.userId) {
+        console.warn('用户信息不完整，可能登录已失效，重新登录')
+        // 清除无效的token和用户信息
+        userStore.clearToken()
+        userStore.clearUserInfo()
+        next(`/login?redirect=${to.path}`)
+        NProgress.done()
+        return
+      }
+
       // 检查是否需要管理员权限
       if (to.meta.isAdmin && !isAdmin) {
         console.warn(`用户无权限访问: ${to.path}`)
         next('/403')
         NProgress.done()
         return
+      }
+
+      // 检查特定权限
+      if (to.meta.permission) {
+        const hasPermission = userStore.hasPermission(to.meta.permission)
+        if (!hasPermission) {
+          console.warn(`用户无权限访问: ${to.path}, 需要权限: ${to.meta.permission}`)
+          next('/403')
+          NProgress.done()
+          return
+        }
+      }
+
+      // 检查多个权限（任一即可）
+      if (to.meta.permissions && to.meta.permissions.length > 0) {
+        const hasAnyPermission = userStore.hasAnyPermission(to.meta.permissions)
+        if (!hasAnyPermission) {
+          console.warn(`用户无权限访问: ${to.path}, 需要权限之一: ${to.meta.permissions.join(', ')}`)
+          next('/403')
+          NProgress.done()
+          return
+        }
       }
     }
 

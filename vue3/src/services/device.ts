@@ -1,12 +1,12 @@
 import { http } from './request'
 import api from './api'
-import type { Device, DeviceQueryParams, DeviceListResponse } from '@/types/device'
+import type { Device, DeviceQueryParams } from '@/types/device'
 
 /**
  * 查询设备列表
  */
-export function queryDevices(params: DeviceQueryParams) {
-  return http.get<DeviceListResponse>(api.device.query, params)
+export function queryDevices(params: Partial<DeviceQueryParams>) {
+  return http.getPage<Device>(api.device.query, params)
 }
 
 /**
@@ -40,4 +40,3 @@ export function deleteDevice(deviceId: string) {
 export function clearDeviceMemory(deviceId: string) {
   return http.post(api.message.delete, { deviceId })
 }
-

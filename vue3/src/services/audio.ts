@@ -52,9 +52,28 @@ interface StreamingContext {
   startPlaying: () => void
 }
 
+// Opus Module 可能的结构
+interface OpusModule {
+  instance?: OpusDecoderModule
+  _opus_decoder_get_size?: (channels: number) => number
+  _opus_decoder_init?: (decoder: number, sampleRate: number, channels: number) => number
+  _opus_decode?: (
+    decoder: number,
+    data: number,
+    len: number,
+    pcm: number,
+    frameSize: number,
+    decodeFec: number
+  ) => number
+  _malloc?: (size: number) => number
+  _free?: (ptr: number) => void
+  HEAPU8?: Uint8Array
+  HEAP16?: Int16Array
+}
+
 declare global {
   interface Window {
-    Module?: any
+    Module?: OpusModule
     ModuleInstance?: OpusDecoderModule
     audioContext?: AudioContext
     streamingContext?: StreamingContext
@@ -122,7 +141,7 @@ async function initAudioContext(): Promise<AudioContext | null> {
   }
 
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+    const AudioContextClass = window.AudioContext || (window as unknown as Record<string, unknown>).webkitAudioContext
     audioContext = new AudioContextClass({
       sampleRate: defaultConfig.sampleRate,
       latencyHint: 'interactive'
@@ -172,25 +191,40 @@ async function initAudioContext(): Promise<AudioContext | null> {
 
 function checkOpusLoaded(): boolean {
   try {
-    if (typeof window.Module === 'undefined') {
+    if (!window.Module) {
       return false
     }
 
+    const module = window.Module
+
+    // 检查 Module.instance 是否存在且有效
     if (
-      typeof window.Module.instance !== 'undefined' &&
-      typeof window.Module.instance._opus_decoder_get_size === 'function'
+      module.instance &&
+      typeof module.instance._opus_decoder_get_size === 'function'
     ) {
-      window.ModuleInstance = window.Module.instance
+      window.ModuleInstance = module.instance
       log('Opus库加载成功（使用Module.instance）', 'success')
       return true
     }
 
-    if (typeof window.Module._opus_decoder_get_size === 'function') {
-      window.ModuleInstance = window.Module
+    // 检查 Module 本身是否包含解码器方法
+    if (typeof module._opus_decoder_get_size === 'function') {
+      // 确保 module 符合 OpusDecoderModule 接口
+      const decoderModule: OpusDecoderModule = {
+        _opus_decoder_get_size: module._opus_decoder_get_size,
+        _opus_decoder_init: module._opus_decoder_init!,
+        _opus_decode: module._opus_decode!,
+        _malloc: module._malloc!,
+        _free: module._free!,
+        HEAPU8: module.HEAPU8!,
+        HEAP16: module.HEAP16!
+      }
+      window.ModuleInstance = decoderModule
       log('Opus库加载成功（使用全局Module）', 'success')
       return true
     }
 
+    // 检查是否已经设置了 ModuleInstance
     if (
       window.ModuleInstance &&
       typeof window.ModuleInstance._opus_decoder_get_size === 'function'
@@ -536,7 +570,7 @@ async function playBufferedAudio(): Promise<boolean> {
             return
           }
 
-          let decodedSamples: number[] = []
+          const decodedSamples: number[] = []
           for (const frame of opusFrames) {
             try {
               const frameData = opusDecoder.decode(frame)

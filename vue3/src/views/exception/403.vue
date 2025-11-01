@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 function goBack() {
   router.back()
 }
 
 function goHome() {
-  router.push('/dashboard')
+  // 清除用户信息和token，避免因权限不足导致的循环跳转
+  userStore.clearUserInfo()
+  userStore.clearToken()
+  router.push('/login')
 }
 </script>
 

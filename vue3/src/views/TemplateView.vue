@@ -62,33 +62,36 @@
           </template>
 
           <template v-else-if="column.key === 'operation'">
-            <a-space>
-              <a @click="handleEdit(record)">{{ t('common.edit') }}</a>
-              <a @click="handlePreview(record)">{{ t('common.view') }}</a>
-              <a v-if="record.isDefault != 1" @click="handleSetDefault(record)">{{ t('common.setAsDefault') }}</a>
-              <a-popconfirm
-                :title="t('template.confirmDelete')"
-                :ok-text="t('common.confirm')"
-                :cancel-text="t('common.cancel')"
-                @confirm="handleDelete(record)"
-              >
-                <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
-              </a-popconfirm>
-            </a-space>
+            <TableActionButtons
+              :record="record"
+              show-edit
+              show-view
+              show-set-default
+              show-delete
+              :is-default="record.isDefault == 1"
+              :delete-title="t('template.confirmDelete')"
+              @edit="handleEdit"
+              @view="handlePreview"
+              @set-default="handleSetDefault"
+              @delete="handleDelete"
+            />
           </template>
         </template>
       </a-table>
     </a-card>
 
+    <!-- 回到顶部 -->
+    <a-back-top />
+
     <!-- 创建/编辑对话框 -->
     <a-modal
-      v-model:open="modalVisible"
-      :title="isEdit ? t('template.editTemplate') : t('template.createTemplate')"
-      :confirm-loading="modalLoading"
+      v-model:open="modal.visible.value"
+      :title="modal.isEdit.value ? t('template.editTemplate') : t('template.createTemplate')"
+      :confirm-loading="modal.submitLoading.value"
       :mask-closable="false"
       width="800px"
       @ok="handleSubmit"
-      @cancel="handleModalCancel"
+      @cancel="modal.close"
     >
       <a-form
         ref="formRef"
@@ -143,7 +146,7 @@
 
         <a-form-item :label="t('common.isDefault')" name="isDefault">
           <a-switch v-model:checked="formData.isDefault" />
-          <span style="margin-left: 8px; color: #999">{{ t('template.defaultTip') }}</span>
+          <span style="margin-left: 8px; color: var(--ant-color-text-tertiary)">{{ t('template.defaultTip') }}</span>
         </a-form-item>
 
         <a-form-item
@@ -216,8 +219,12 @@ import {
   setDefaultTemplate
 } from '@/services/template'
 import { useTable } from '@/composables/useTable'
+import { useModal } from '@/composables/useModal'
+import { useLoadingStore } from '@/store/loading'
+import TableActionButtons from '@/components/TableActionButtons.vue'
 
 const { t } = useI18n()
+const loadingStore = useLoadingStore()
 
 const columns = computed(() => [
   {
@@ -288,12 +295,69 @@ const {
   loadData
 } = useTable<PromptTemplate>()
 
-// 模态框相关
-const modalVisible = ref(false)
-const modalLoading = ref(false)
-const isEdit = ref(false)
 const formRef = ref<FormInstance>()
-const currentRecord = ref<PromptTemplate | null>(null)
+const modal = useModal({
+  formRef,
+  onSubmit: async (data, isEdit) => {
+    // Modal 内已有 submitLoading，不需要全局 loading
+    try {
+      const category = formData.category === 'custom' && formData.customCategory 
+        ? formData.customCategory 
+        : formData.category
+      
+      const requestData: Partial<PromptTemplate> = {
+        templateName: formData.templateName,
+        templateDesc: formData.templateDesc || '',
+        category: category,
+        templateContent: formData.templateContent,
+        isDefault: formData.isDefault ? 1 : 0,
+        state: 1
+      }
+      
+      if (isEdit && modal.editingItem.value) {
+        requestData.templateId = (modal.editingItem.value as PromptTemplate).templateId
+      }
+      
+      const res = isEdit
+        ? await updateTemplate(requestData)
+        : await addTemplate(requestData)
+      
+      if (res.code === 200) {
+        message.success(isEdit ? t('template.updateSuccess') : t('template.createSuccess'))
+        await fetchData()
+        return true
+      } else {
+        message.error(res.message || t('template.operationFailed'))
+        return false
+      }
+    } catch (error) {
+      message.error(t('template.operationFailed'))
+      return false
+    }
+  },
+  onOpen: (item) => {
+    if (item) {
+      const template = item as PromptTemplate
+      const isCustomCategory = !categoryOptions.value.some(c => c.value === template.category)
+      showCustomCategory.value = isCustomCategory
+      
+      Object.assign(formData, {
+        templateName: template.templateName,
+        category: isCustomCategory ? 'custom' : template.category,
+        customCategory: isCustomCategory ? template.category : '',
+        templateDesc: template.templateDesc || '',
+        templateContent: template.templateContent,
+        isDefault: template.isDefault == 1
+      })
+    } else {
+      showCustomCategory.value = false
+      resetForm()
+      formData.category = '基础角色'
+      formData.isDefault = false
+    }
+  }
+})
+
 const showCustomCategory = ref(false)
 
 // 表单数据
@@ -352,40 +416,20 @@ const fetchData = async () => {
 
 // 创建
 const handleCreate = () => {
-  isEdit.value = false
-  modalVisible.value = true
-  showCustomCategory.value = false
-  resetForm()
-  formData.category = '基础角色'
-  formData.isDefault = false
+  modal.openCreate()
 }
 
-// 编辑
 const handleEdit = (record: PromptTemplate) => {
-  isEdit.value = true
-  modalVisible.value = true
-  currentRecord.value = record
-  
-  // 检查是否需要显示自定义分类输入框
-  const isCustomCategory = !categoryOptions.value.some(c => c.value === record.category)
-  showCustomCategory.value = isCustomCategory
-  
-  // 填充表单
-  formData.templateName = record.templateName
-  formData.category = isCustomCategory ? 'custom' : record.category
-  formData.customCategory = isCustomCategory ? record.category : ''
-  formData.templateDesc = record.templateDesc || ''
-  formData.templateContent = record.templateContent
-  formData.isDefault = record.isDefault == 1
+  modal.openEdit(record)
 }
 
-// 删除
+// 删除（快速操作，只用 table loading）
 const handleDelete = async (record: PromptTemplate) => {
   if (!record.templateId) return
   
+  loading.value = true
   try {
-    loading.value = true
-    const res = await deleteTemplate(record.templateId)
+    const res = await deleteTemplate(record.templateId!)
     if (res.code === 200) {
       message.success(t('template.deleteSuccess'))
       await fetchData()
@@ -399,12 +443,12 @@ const handleDelete = async (record: PromptTemplate) => {
   }
 }
 
-// 设为默认
+// 设为默认（快速操作，只用 table loading）
 const handleSetDefault = async (record: PromptTemplate) => {
   if (!record.templateId) return
   
+  loading.value = true
   try {
-    loading.value = true
     const res = await setDefaultTemplate(record.templateId)
     if (res.code === 200) {
       message.success(t('template.setDefaultSuccess'))
@@ -433,57 +477,13 @@ const handleCategoryChange = (value: string) => {
   }
 }
 
-// 提交表单
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate()
-    
-    modalLoading.value = true
-    
-    // 处理自定义分类
-    let category = formData.category
-    if (category === 'custom' && formData.customCategory) {
-      category = formData.customCategory
-    }
-    
-    // 构建请求数据
-    const requestData: Partial<PromptTemplate> = {
-      templateName: formData.templateName,
-      templateDesc: formData.templateDesc || '',
-      category: category,
-      templateContent: formData.templateContent,
-      isDefault: formData.isDefault ? 1 : 0,
-      state: 1
-    }
-    
-    // 如果是编辑模式，添加templateId
-    if (isEdit.value && currentRecord.value?.templateId) {
-      requestData.templateId = currentRecord.value.templateId
-    }
-    
-    // 发送请求
-    const res = isEdit.value
-      ? await updateTemplate(requestData)
-      : await addTemplate(requestData)
-    
-    if (res.code === 200) {
-      message.success(isEdit.value ? t('template.updateSuccess') : t('template.createSuccess'))
-      modalVisible.value = false
-      await fetchData()
-    } else {
-      message.error(res.message || t('template.operationFailed'))
-    }
+    await modal.submit(formData)
   } catch (error) {
     console.error('表单验证失败:', error)
-  } finally {
-    modalLoading.value = false
   }
-}
-
-// 关闭模态框
-const handleModalCancel = () => {
-  modalVisible.value = false
-  resetForm()
 }
 
 // 重置表单
@@ -503,7 +503,8 @@ const handleTableChange: TableProps['onChange'] = (pag) => {
   onTableChange(pag)
 }
 
-await fetchData()
+// 初始化（非阻塞式加载）
+fetchData()
 </script>
 
 <style scoped>
@@ -517,13 +518,13 @@ await fetchData()
 
 .template-preview-content {
   white-space: pre-wrap;
-  background: var(--bg-secondary);
+  background: var(--ant-color-fill-tertiary);
   padding: 16px 20px;
-  border-left: 4px solid var(--primary-color);
+  border-left: 4px solid var(--ant-color-primary);
   border-radius: 4px;
   max-height: 500px;
   overflow-y: auto;
-  color: var(--text-color);
+  color: var(--ant-color-text);
   line-height: 1.8;
   margin: 0;
 }

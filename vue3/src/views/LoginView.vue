@@ -9,14 +9,16 @@ import {
   WechatOutlined,
   QqOutlined,
   MobileOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useFormValidation } from '@/composables/useFormValidation'
 
 const { t } = useI18n()
-const { loading, login, getRememberedCredentials } = useAuth()
+const { loading, sendCodeLoading, countdown, login, telLogin, sendVerificationCode, getRememberedCredentials } = useAuth()
 const { usernameRules, passwordRules } = useFormValidation()
 
+const loginType = ref<'account' | 'mobile'>('account')
 const formRef = ref<FormInstance>()
 const formState = reactive({
   username: '',
@@ -24,13 +26,33 @@ const formState = reactive({
   rememberMe: false,
 })
 
+const mobileFormState = reactive({
+  tel: '',
+  code: '',
+})
+
 const rules: Record<string, Rule[]> = {
   username: usernameRules,
   password: passwordRules,
 }
 
+// 切换登录方式
+const switchLoginType = (type: 'account' | 'mobile') => {
+  loginType.value = type
+}
+
+// 发送验证码
+const handleSendCode = () => {
+  sendVerificationCode(mobileFormState.tel)
+}
+
+// 提交表单
 const handleSubmit = async () => {
-  await login(formState)
+  if (loginType.value === 'account') {
+    await login(formState)
+  } else {
+    await telLogin(mobileFormState)
+  }
 }
 
 onMounted(() => {
@@ -50,46 +72,104 @@ onMounted(() => {
 
           <a-form
             ref="formRef"
-            :model="formState"
+            :model="loginType === 'account' ? formState : mobileFormState"
             :rules="rules"
             layout="vertical"
             @finish="handleSubmit"
             :hideRequiredMark="true"
           >
-            <a-form-item :label="t('user.username')" name="username">
-              <a-input
-                v-model:value="formState.username"
-                :placeholder="t('common.enterUsername')"
-                size="large"
-                class="input-field"
-              >
-                <template #prefix>
-                  <UserOutlined />
-                </template>
-              </a-input>
-            </a-form-item>
+            <!-- 账号密码登录 -->
+            <template v-if="loginType === 'account'">
+              <a-form-item :label="t('user.username')" name="username">
+                <a-input
+                  v-model:value="formState.username"
+                  :placeholder="t('common.enterUsername')"
+                  size="large"
+                  class="input-field"
+                >
+                  <template #prefix>
+                    <UserOutlined />
+                  </template>
+                </a-input>
+              </a-form-item>
 
-            <a-form-item :label="t('account.password')" name="password">
-              <a-input-password
-                v-model:value="formState.password"
-                :placeholder="t('common.enterPassword')"
-                size="large"
-                class="input-field"
-              >
-                <template #prefix>
-                  <LockOutlined />
-                </template>
-              </a-input-password>
-            </a-form-item>
+              <a-form-item :label="t('account.password')" name="password">
+                <a-input-password
+                  v-model:value="formState.password"
+                  :placeholder="t('common.enterPassword')"
+                  size="large"
+                  class="input-field"
+                >
+                  <template #prefix>
+                    <LockOutlined />
+                  </template>
+                </a-input-password>
+              </a-form-item>
 
-            <a-row type="flex" justify="space-between" align="middle" class="form-options">
-              <a-col>
-                <a-checkbox v-model:checked="formState.rememberMe"> {{ t('auth.rememberMe') }} </a-checkbox>
-              </a-col>
-              <a-col>
-                <router-link to="/forget"> {{ t('auth.forgetPassword') }} </router-link>
-              </a-col>
-            </a-row>
+              <a-row type="flex" justify="space-between" align="middle" class="form-options">
+                <a-col>
+                  <a-checkbox v-model:checked="formState.rememberMe"> {{ t('auth.rememberMe') }} </a-checkbox>
+                </a-col>
+                <a-col>
+                  <router-link to="/forget"> {{ t('auth.forgetPassword') }} </router-link>
+                </a-col>
+              </a-row>
+            </template>
+
+            <!-- 手机号验证码登录 -->
+            <template v-else>
+              <a-form-item :label="t('auth.mobilePhone')" name="tel">
+                <a-input
+                  v-model:value="mobileFormState.tel"
+                  :placeholder="t('auth.enterMobilePhone')"
+                  size="large"
+                  class="input-field"
+                >
+                  <template #prefix>
+                    <MobileOutlined />
+                  </template>
+                </a-input>
+              </a-form-item>
+
+              <a-form-item :label="t('auth.verificationCode')" name="code">
+                <a-input
+                  v-model:value="mobileFormState.code"
+                  :placeholder="t('common.enterVerificationCode')"
+                  size="large"
+                  class="input-field"
+                >
+                  <template #prefix>
+                    <SafetyCertificateOutlined />
+                  </template>
+                  <template #suffix>
+                    <span
+                      class="send-code-btn"
+                      :class="{
+                        disabled: !mobileFormState.tel || sendCodeLoading || countdown > 0,
+                        loading: sendCodeLoading,
+                      }"
+                      @click="handleSendCode"
+                    >
+                      {{
+                        sendCodeLoading
+                          ? t('auth.sending')
+                          : countdown > 0
+                            ? t('auth.resendAfter', { seconds: countdown })
+                            : t('auth.sendVerificationCode')
+                      }}
+                    </span>
+                  </template>
+                </a-input>
+              </a-form-item>
+
+              <a-row type="flex" justify="end" align="middle" class="form-options">
+                <a-col>
+                  <a @click="switchLoginType('account')" class="switch-login-type">
+                    {{ t('auth.useAccountLogin') }}
+                  </a>
+                </a-col>
+              </a-row>
+            </template>
 
             <a-form-item style="margin-top: 24px">
               <a-button
@@ -127,7 +207,13 @@ onMounted(() => {
                 </a-button>
               </a-col>
               <a-col>
-                <a-button type="default" shape="circle" size="large" class="social-button mobile">
+                <a-button
+                  type="default"
+                  shape="circle"
+                  size="large"
+                  class="social-button mobile"
+                  @click="switchLoginType('mobile')"
+                >
                   <MobileOutlined />
                 </a-button>
               </a-col>
@@ -316,6 +402,7 @@ onMounted(() => {
   border: none !important;
   color: #ffffff !important;
   transition: all 0.3s ease;
+  box-shadow: none;
 
   &:hover {
     transform: translateY(-2px);
@@ -349,5 +436,39 @@ onMounted(() => {
 :deep(.ant-divider-horizontal.ant-divider-with-text::before),
 :deep(.ant-divider-horizontal.ant-divider-with-text::after) {
   border-top-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+// 发送验证码按钮
+.send-code-btn {
+  color: #4285f4;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.3s;
+
+  &:hover:not(.disabled) {
+    color: #3367d6;
+  }
+
+  &.disabled {
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+  }
+
+  &.loading {
+    cursor: not-allowed;
+  }
+}
+
+// 切换登录方式链接
+.switch-login-type {
+  color: #4285f4;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    color: #3367d6;
+  }
 }
 </style>

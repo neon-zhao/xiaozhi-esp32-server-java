@@ -3,15 +3,18 @@ import { ref, reactive, onBeforeUnmount, computed } from 'vue'
 import { message as antMessage, type TablePaginationConfig } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useTable } from '@/composables/useTable'
+import { useExport } from '@/composables/useExport'
 import { useLoadingStore } from '@/store/loading'
 import { queryMessages, deleteMessage } from '@/services/message'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import TableActionButtons from '@/components/TableActionButtons.vue'
 import type { Message, MessageQueryParams } from '@/types/message'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEventBus } from '@vueuse/core'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 
 const { t } = useI18n()
+const loadingStore = useLoadingStore()
 
 const router = useRouter()
 
@@ -26,8 +29,8 @@ const {
   createDebouncedSearch
 } = useTable<Message>()
 
-// 全局 Loading
-const loadingStore = useLoadingStore()
+// 使用导出 composable
+const { exporting, exportToExcel } = useExport()
 
 // 查询表单
 const queryForm = reactive({
@@ -53,10 +56,10 @@ const senderOptions = [
 ]
 
 // 日期快捷选项
-const rangePresets = computed(() => ({
-  [t('message.today')]: [dayjs().startOf('day'), dayjs().endOf('day')],
-  [t('message.thisMonth')]: [dayjs().startOf('month'), dayjs().endOf('month')],
-}))
+const rangePresets = computed(() => [
+  { label: t('message.today'), value: [dayjs().startOf('day'), dayjs().endOf('day')] },
+  { label: t('message.thisMonth'), value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+])
 
 // 事件总线
 const stopAllAudioBus = useEventBus<void>('stop-all-audio')
@@ -76,7 +79,7 @@ const columns = computed(() => [
     align: 'center'
   },
   {
-    title: t('device.roleName'),
+    title: t('role.roleName'),
     dataIndex: 'roleName',
     width: 100,
     align: 'center'
@@ -135,18 +138,18 @@ async function fetchData() {
 // 防抖搜索
 const debouncedSearch = createDebouncedSearch(fetchData, 500)
 
-// 删除消息
+// 删除消息（快速操作，只用 table loading）
 async function handleDeleteMessage(record: Message) {
   loading.value = true
   try {
     const res = await deleteMessage(record.messageId)
     if (res.code === 200) {
-      antMessage.success(t('message.prompt.deleteSuccess'))
-      fetchData()
+      antMessage.success(t('common.deleteSuccess'))
+      await fetchData()
     }
   } catch (error) {
     console.error('删除消息失败:', error)
-    antMessage.error(t('message.prompt.deleteFailed'))
+    antMessage.error(t('common.deleteFailed'))
   } finally {
     loading.value = false
   }
@@ -175,18 +178,36 @@ function getSenderText(sender: string) {
   return sender === 'user' ? t('message.user') : t('message.assistant')
 }
 
-// 导出消息数据
+// 导出消息数据（耗时操作，使用全局 loading）
 async function handleExport() {
+  if (!data.value || data.value.length === 0) {
+    antMessage.warning(t('export.noData'))
+    return
+  }
+  
+  loadingStore.showLoading(t('common.exporting'))
   try {
-    loadingStore.showLoading(t('message.prompt.exporting'))
-    
-    // TODO: 调用实际的导出接口
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    antMessage.success(t('message.prompt.exportSuccess'))
+    // 导出为 Excel 格式（兼容 CSV）
+    await exportToExcel(data.value, {
+      filename: `messages_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}`,
+      showLoading: false,  // 禁用内部的 message，使用全局 loading
+      columns: [
+        { key: 'deviceId', title: t('device.deviceId') },
+        { key: 'deviceName', title: t('device.deviceName') },
+        { key: 'roleName', title: t('role.roleName') },
+        { 
+          key: 'sender', 
+          title: t('message.messageSender'),
+          format: (val) => val === 'user' ? t('message.user') : t('message.assistant')
+        },
+        { key: 'message', title: t('message.messageContent') },
+        { key: 'createTime', title: t('message.conversationTime') }
+      ]
+    })
+    antMessage.success(t('common.exportSuccess'))
   } catch (error) {
     console.error('导出失败:', error)
-    antMessage.error(t('message.prompt.exportFailed'))
+    antMessage.error(t('common.exportFailed'))
   } finally {
     loadingStore.hideLoading()
   }
@@ -208,7 +229,8 @@ onBeforeUnmount(() => {
   stopAllAudioBus.emit()
 })
 
-await fetchData()
+// 初始化（非阻塞式加载）
+fetchData()
 </script>
 
 <template>
@@ -255,6 +277,7 @@ await fetchData()
               <a-range-picker
                 v-model:value="timeRange"
                 :presets="rangePresets"
+                :allow-clear="false"
                 format="MM-DD"
                 @change="debouncedSearch"
               />
@@ -267,7 +290,7 @@ await fetchData()
     <!-- 数据表格 -->
     <a-card :title="t('message.queryTable')" :bordered="false">
       <template #extra>
-        <a-button type="primary" @click="handleExport">
+        <a-button type="primary" @click="handleExport" :loading="exporting">
           {{ t('common.export') }}
         </a-button>
       </template>
@@ -335,16 +358,12 @@ await fetchData()
 
           <!-- 操作列 -->
           <template v-else-if="column.dataIndex === 'operation'">
-            <a-space>
-              <a-popconfirm
-                :title="t('message.confirmDeleteMessage')"
-                :ok-text="t('common.confirm')"
-                :cancel-text="t('common.cancel')"
-                @confirm="() => handleDeleteMessage(record)"
-              >
-                <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
-              </a-popconfirm>
-            </a-space>
+            <TableActionButtons
+              :record="record"
+              show-delete
+              :delete-title="t('message.confirmDeleteMessage')"
+              @delete="() => handleDeleteMessage(record)"
+            />
           </template>
         </template>
       </a-table>

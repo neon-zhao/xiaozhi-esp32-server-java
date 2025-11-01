@@ -23,7 +23,7 @@
             <span style="font-size: 16px">🔄</span> {{ t('component.settings.theme.auto') }}
           </a-radio-button>
         </a-radio-group>
-        <div style="margin-top: 8px; font-size: 12px; color: #999">
+        <div style="margin-top: 8px; font-size: 12px; color: var(--ant-color-text-tertiary)">
           {{ t('component.settings.theme.current') }}: {{ themeName }} ({{ t('component.settings.theme.actual') }}: {{ actualTheme }})
         </div>
       </div>
@@ -45,7 +45,7 @@
             {{ localeNames[locale] }}
           </a-radio-button>
         </a-radio-group>
-        <div style="margin-top: 8px; font-size: 12px; color: #999">
+        <div style="margin-top: 8px; font-size: 12px; color: var(--ant-color-text-tertiary)">
           {{ t('component.settings.language.current') }}: {{ localeName }}
         </div>
       </div>
@@ -120,7 +120,7 @@ const {
 <style scoped>
 h4 {
   font-weight: 600;
-  color: var(--ant-primary-color);
+  color: var(--ant-color-primary);
 }
 
 :deep(.ant-radio-button-wrapper) {

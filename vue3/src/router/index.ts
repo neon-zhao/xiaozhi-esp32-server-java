@@ -11,6 +11,8 @@ declare module 'vue-router' {
     isAdmin?: boolean
     parent?: string
     hideInMenu?: boolean
+    permission?: string // 单个权限
+    permissions?: string[] // 多个权限（任一即可）
   }
 }
 
@@ -57,6 +59,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.dashboard',
           icon: 'DashboardOutlined',
           requiresAuth: true,
+          permission: 'system:dashboard',
         },
       },
       {
@@ -67,7 +70,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.user',
           icon: 'TeamOutlined',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:user',
         },
       },
       {
@@ -78,6 +81,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.device',
           icon: 'RobotOutlined',
           requiresAuth: true,
+          permission: 'system:device',
         },
       },
       {
@@ -88,6 +92,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.message',
           icon: 'MessageOutlined',
           requiresAuth: true,
+          permission: 'system:message',
         },
       },
       {
@@ -98,6 +103,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.role',
           icon: 'UserAddOutlined',
           requiresAuth: true,
+          permission: 'system:role',
         },
       },
       {
@@ -109,7 +115,7 @@ const routes: RouteRecordRaw[] = [
           icon: 'SnippetsOutlined',
           parent: 'router.parent.roleManagement',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:prompt-template',
           hideInMenu: true
         },
       },
@@ -122,7 +128,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.modelConfig',
           parent: 'router.parent.configManagement',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:config:model',
         },
       },
       {
@@ -133,7 +139,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.agent',
           parent: 'router.parent.configManagement',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:config:agent',
         },
       },
       {
@@ -144,7 +150,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.sttConfig',
           parent: 'router.parent.configManagement',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:config:stt',
         },
       },
       {
@@ -155,7 +161,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.ttsConfig',
           parent: 'router.parent.configManagement',
           requiresAuth: true,
-          isAdmin: true,
+          permission: 'system:config:tts',
         },
       },
       // 个人设置
@@ -167,6 +173,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.account',
           parent: 'router.parent.settings',
           requiresAuth: true,
+          permission: 'system:setting',
         },
       },
       {
@@ -177,6 +184,7 @@ const routes: RouteRecordRaw[] = [
           title: 'router.title.personalConfig',
           parent: 'router.parent.settings',
           requiresAuth: true,
+          permission: 'system:setting',
         },
       },
     ],

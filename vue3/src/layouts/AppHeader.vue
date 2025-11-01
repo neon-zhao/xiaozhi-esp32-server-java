@@ -6,7 +6,7 @@ import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { useAvatar } from '@/composables/useAvatar'
 import { useLocale } from '@/composables/useLocale'
-import { useTheme } from '@/composables/useTheme'
+import { useAntdTheme } from '@/composables/useAntdTheme'
 
 const { t } = useI18n()
 import { 
@@ -24,7 +24,7 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 const { getAvatarUrl } = useAvatar()
 const { currentLocale, localeName, setLocale, availableLocales, localeNames } = useLocale()
-const { themeMode, actualTheme, toggleTheme, setTheme } = useTheme()
+const { themeMode, actualTheme, toggleTheme, setTheme } = useAntdTheme()
 
 // 用户信息
 const user = computed(() => userStore.userInfo || {})
@@ -64,6 +64,8 @@ const themeText = computed(() => {
 function handleLogout() {
   // 清除用户信息
   userStore.clearUserInfo()
+  // 清除token
+  userStore.clearToken()
   // 跳转到登录页
   router.push('/login')
 }

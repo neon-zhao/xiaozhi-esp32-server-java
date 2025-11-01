@@ -17,7 +17,7 @@ export interface WebSocketMessage {
   state?: 'start' | 'stop' | 'text' | 'sentence_start'
   text?: string
   session_id?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface ChatMessage {
@@ -28,7 +28,7 @@ export interface ChatMessage {
   timestamp: Date
   isLoading?: boolean
   duration?: string
-  audioData?: any
+  audioData?: ArrayBuffer | Blob
 }
 
 export interface ConnectionStatus {
@@ -56,7 +56,7 @@ let isTyping = false // 是否正在打字
 const TYPING_SPEED = 50 // 每个字的显示间隔（毫秒）
 
 // 连接状态
-let connectionStatus: ConnectionStatus = {
+const connectionStatus: ConnectionStatus = {
   isConnected: false,
   connectionStatus: '未连接',
   connectionTime: null,
@@ -608,7 +608,7 @@ function handleTTSMessage(data: WebSocketMessage): void {
 // 消息发送
 // =============================
 
-function sendJsonMessage(data: Record<string, any>): boolean {
+function sendJsonMessage(data: Record<string, unknown>): boolean {
   if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
     log('WebSocket未连接，无法发送消息', 'error')
     return false

@@ -12,12 +12,12 @@ export const useDeviceStore = defineStore('device', () => {
   
   // 在线设备列表
   const onlineDevices = computed(() => {
-    return devices.value.filter(device => device.state === 1)
+    return devices.value.filter(device => device.state == '1')
   })
 
   // 离线设备列表
   const offlineDevices = computed(() => {
-    return devices.value.filter(device => device.state === 0)
+    return devices.value.filter(device => device.state == '0')
   })
 
   // 设备总数
@@ -77,7 +77,7 @@ export const useDeviceStore = defineStore('device', () => {
    * 更新设备在线状态
    */
   const updateDeviceStatus = (deviceId: string, online: boolean) => {
-    updateDevice(deviceId, { state: online ? 1 : 0 })
+    updateDevice(deviceId, { state: online ? '1' : '0' })
   }
 
   /**

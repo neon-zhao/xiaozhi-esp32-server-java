@@ -28,40 +28,20 @@ export interface Config {
   [key: string]: any
 }
 
+import type { PageQueryParams } from './api'
+
 /**
  * 配置查询参数
  */
-export interface ConfigQueryParams {
-  start: number
-  limit: number
+export interface ConfigQueryParams extends PageQueryParams {
   configType: ConfigType
   provider?: string
   configName?: string
-  modelType?: string
-}
-
-/**
- * 配置列表响应
- */
-export interface ConfigListResponse {
-  list: Config[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
+  modelType?: string,
+  state?: string
+  // 重写 start 和 limit 为可选
+  start?: number
+  limit?: number
 }
 
 /**

@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store/user'
-import type { MenuItem } from '@/types/menu'
+import type { MenuItem, MenuMeta } from '@/types/menu'
 
 /**
  * 菜单管理 Composable
@@ -32,12 +32,17 @@ export function useMenu() {
     
     // 遍历路由，构建菜单
     mainRoute.children
-      .filter(route => route.meta?.title && !route.meta?.hideInMenu)
+      .filter(route => 
+        route.meta?.title && 
+        !route.meta?.hideInMenu &&
+        // 排除仅显示在用户端header的路由
+        !route.meta?.showInUserHeader
+      )
       .forEach(route => {
         const menuItem: MenuItem = {
           path: `/${route.path}`,
           name: route.name as string,
-          meta: route.meta as any,
+          meta: route.meta as MenuMeta,
           children: []
         }
         
@@ -75,10 +80,7 @@ export function useMenu() {
     return rootMenus
   })
 
-  // 是否是管理员
-  const isAdmin = computed(() => {
-    return String(userStore.userInfo?.isAdmin) === '1'
-  })
+  const { isAdmin } = userStore
 
   // 过滤后的菜单（根据权限）
   const filteredMenuItems = computed(() => {
@@ -96,7 +98,7 @@ export function useMenu() {
   function filterMenuByPermission(items: MenuItem[]): MenuItem[] {
     return items.filter(item => {
       // 检查是否需要管理员权限
-      if (item.meta.isAdmin && !isAdmin.value) {
+      if (item.meta.isAdmin && !isAdmin) {
         return false
       }
       

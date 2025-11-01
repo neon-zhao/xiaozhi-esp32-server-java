@@ -8,7 +8,7 @@ import type { Rule } from 'ant-design-vue/es/form'
 import { useUserStore } from '@/store/user'
 import { useAvatar } from '@/composables/useAvatar'
 import { updateUser } from '@/services/user'
-import { uploadAvatar } from '@/services/upload'
+import { uploadFile } from '@/services/upload'
 import type { User, UpdateUserParams } from '@/types/user'
 import type { UploadProps } from 'ant-design-vue'
 
@@ -178,10 +178,9 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
   }
 
   avatarLoading.value = true
-  uploadAvatarFile(file)
+  uploadFile(file, 'avatar')
     .then(url => {
-      // 更新用户头像
-      updateUserAvatar(url)
+      updateUserAvatar(url as string)
     })
     .catch(error => {
       message.error(t('common.avatarUploadFailed') + error)
@@ -189,11 +188,6 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
     })
 
   return false
-}
-
-// 上传头像文件
-const uploadAvatarFile = (file: File): Promise<string> => {
-  return uploadAvatar(file)
 }
 
 // 更新用户头像
@@ -304,7 +298,7 @@ const getRelativePath = (fullUrl: string): string => {
                       :show-info="false"
                       :stroke-color="passwordLevelColor"
                     />
-                    <div style="margin-top: 10px; font-size: 12px; color: #666">
+                    <div style="margin-top: 10px; font-size: 12px; color: var(--ant-color-text-secondary)">
                       {{ t('account.passwordTip') }}
                     </div>
                   </div>
@@ -357,7 +351,7 @@ const getRelativePath = (fullUrl: string): string => {
             </a-upload>
             <div class="avatar-tips">
               <p>{{ t('common.clickToChangeAvatar') }}</p>
-              <p style="color: #999; font-size: 12px">{{ t('common.avatarFormatTip') }}</p>
+              <p style="color: var(--ant-color-text-tertiary); font-size: 12px">{{ t('common.avatarFormatTip') }}</p>
             </div>
           </div>
         </a-col>

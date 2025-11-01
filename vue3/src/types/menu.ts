@@ -12,7 +12,7 @@ export interface MenuItem {
   name?: string
   meta: MenuMeta
   children?: MenuItem[]
-  component?: any
+  component?: unknown
 }
 
 

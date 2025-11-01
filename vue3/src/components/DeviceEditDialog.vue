@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Device, Role } from '@/types/device'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -62,17 +65,17 @@ watch(
 <template>
   <a-modal
     :open="visible"
-    title="设备详情"
+    :title="t('device.deviceDetails')"
     width="650px"
     @ok="handleOk"
     @cancel="handleClose"
   >
     <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
-      <a-form-item label="设备名称">
+      <a-form-item :label="t('device.deviceName')">
         <a-input v-model:value="formData.deviceName" class="center-input" />
       </a-form-item>
 
-      <a-form-item label="绑定角色">
+      <a-form-item :label="t('device.bindRole')">
         <a-select v-model:value="formData.roleId" class="center-select">
           <a-select-option
             v-for="role in roleItems"
@@ -87,17 +90,17 @@ watch(
 
     <template #footer>
       <a-popconfirm
-        title="确定要清除该设备的所有对话记忆吗？此操作不可恢复。"
-        ok-text="确定"
-        cancel-text="取消"
+        :title="t('device.confirmClearMemory')"
+        :ok-text="t('common.confirm')"
+        :cancel-text="t('common.cancel')"
         @confirm="handleClearMemory"
       >
         <a-button key="clear" type="primary" danger :loading="clearMemoryLoading">
-          清除记忆
+          {{ t('device.clearMemory') }}
         </a-button>
       </a-popconfirm>
-      <a-button key="back" @click="handleClose">取消</a-button>
-      <a-button key="submit" type="primary" @click="handleOk">确定</a-button>
+      <a-button key="back" @click="handleClose">{{ t('common.cancel') }}</a-button>
+      <a-button key="submit" type="primary" @click="handleOk">{{ t('common.confirm') }}</a-button>
     </template>
   </a-modal>
 </template>

@@ -23,19 +23,15 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // ========== 计算属性 ==========
   
-  /**
-   * 是否是管理员
-   */
-  const isAdmin = computed(() => {
-    return userStore.userInfo?.isAdmin === 1
-  })
+  // 使用全局的 isAdmin
+  const { isAdmin } = userStore
 
   /**
    * 是否有指定权限
    */
   const hasPermission = (permission: Permission): boolean => {
     // 管理员拥有所有权限
-    if (isAdmin.value) {
+    if (isAdmin) {
       return true
     }
     return permissions.value.includes(permission)
@@ -45,7 +41,7 @@ export const usePermissionStore = defineStore('permission', () => {
    * 是否有任一权限
    */
   const hasAnyPermission = (perms: Permission[]): boolean => {
-    if (isAdmin.value) {
+    if (isAdmin) {
       return true
     }
     return perms.some(perm => permissions.value.includes(perm))
@@ -55,7 +51,7 @@ export const usePermissionStore = defineStore('permission', () => {
    * 是否有所有权限
    */
   const hasAllPermissions = (perms: Permission[]): boolean => {
-    if (isAdmin.value) {
+    if (isAdmin) {
       return true
     }
     return perms.every(perm => permissions.value.includes(perm))
@@ -106,7 +102,7 @@ export const usePermissionStore = defineStore('permission', () => {
       const tmp = { ...route }
       
       // 检查是否需要管理员权限
-      if (tmp.meta?.isAdmin && !isAdmin.value) {
+      if (tmp.meta?.isAdmin && !isAdmin) {
         return
       }
 

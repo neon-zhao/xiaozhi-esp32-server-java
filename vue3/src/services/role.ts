@@ -1,16 +1,14 @@
 import { http } from './request'
 import api from './api'
-import type { RoleListResponse, RoleQueryParams, RoleFormData, TestVoiceParams } from '@/types/role'
+import type { Role, RoleQueryParams, RoleFormData, TestVoiceParams } from '@/types/role'
 import type { PromptTemplate, TemplateQuery } from '@/types/template'
+import type { PageResponse, DataResponse } from '@/types/api'
 
 /**
  * 查询角色列表
  */
-export function queryRoles(params: RoleQueryParams = {}) {
-  return http.get<RoleListResponse>(
-    api.role.query,
-    params
-  )
+export function queryRoles(params: Partial<RoleQueryParams>) {
+  return http.getPage<Role>(api.role.query, params)
 }
 
 /**
@@ -30,20 +28,6 @@ export function updateRole(data: Partial<RoleFormData>) {
 /**
  * 测试语音
  */
-export function testVoice(data: TestVoiceParams) {
-  return http.get<string>(
-    api.role.testVoice,
-    data
-  )
+export function testVoice(data: Partial<TestVoiceParams>) {
+  return http.get<string>(api.role.testVoice, data)
 }
-
-/**
- * 查询提示词模板
- */
-export function queryTemplates(params: Partial<TemplateQuery> = {}) {
-  return http.get<{ list: PromptTemplate[] }>(
-    api.template.query,
-    params
-  )
-}
-

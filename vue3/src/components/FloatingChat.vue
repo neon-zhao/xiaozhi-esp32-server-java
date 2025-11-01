@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted } from 'vue'
-import { MessageOutlined, SendOutlined, AudioOutlined, CloseOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons-vue'
+import { ref, computed, nextTick, watch } from 'vue'
+import { MessageOutlined, SendOutlined, AudioOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { message as AMessage } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store/user'
 import { useAvatar } from '@/composables/useAvatar'
 import { useWebSocket } from '@/composables/useWebSocket'
-import type { WebSocketConfig } from '@/store/user'
-import type { Rule } from 'ant-design-vue/es/form'
+import { useScroll } from '@/composables/useScroll'
+import { queryRoles } from '@/services/role'
+import { updateDevice } from '@/services/device'
+import type { Role } from '@/types/role'
 
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -30,66 +32,72 @@ const chatVisible = ref(false)
 const inputMessage = ref('')
 const isVoiceMode = ref(false)
 const isRecording = ref(false)
-const chatContentRef = ref<HTMLElement>()
 
-// 设置抽屉状态
-const settingsVisible = ref(false)
-const settingsForm = ref<WebSocketConfig>({
-  url: userStore.wsConfig.url,
-  deviceId: userStore.wsConfig.deviceId || 'web_test',
-  deviceName: userStore.wsConfig.deviceName || 'Web用户',
-  autoConnect: userStore.wsConfig.autoConnect
+// 使用滚动管理 composable
+const { containerRef: chatContentRef, scrollToBottom, isAtBottom } = useScroll({
+  enableScrollListener: true
 })
 
-// 表单验证规则
-const rules: Record<string, Rule[]> = {
-  url: [
-    { required: true, message: t('validation.enterWebSocketUrl'), trigger: 'blur' },
-    {
-      pattern: /^wss?:\/\/.+/,
-      message: t('validation.enterValidWebSocketUrl'),
-      trigger: 'blur'
-    }
-  ],
-  deviceId: [
-    { required: true, message: t('validation.enterDeviceId'), trigger: 'blur' }
-  ]
-}
+// 角色列表和当前选中的角色
+const roleList = ref<Role[]>([])
+const selectedRoleId = ref<number | undefined>()
 
 // 头像
 const userAvatar = computed(() => getAvatarUrl(userStore.userInfo?.avatar))
-const aiAvatar = computed(() => '/ai-avatar.png') // 默认AI头像
 
 // WebSocket 配置（从 store 获取）
 const wsConfig = computed(() => ({
   url: userStore.wsConfig.url,
-  deviceId: userStore.wsConfig.deviceId || userStore.userInfo?.userId?.toString() || '1',
-  deviceName: userStore.wsConfig.deviceName || userStore.userInfo?.name || 'Web用户',
+  // 使用 user_chat_ + userId 作为设备ID，与后端自动创建的虚拟设备ID格式一致
+  deviceId: `user_chat_${userStore.userInfo?.userId}`,
   token: userStore.token
 }))
 
-// 初始化 - 自动连接WebSocket
-// 注意：onMounted 支持 async 函数是 Vue 3 的正确用法
-// 与页面级的 async setup 不同，组件内的异步初始化使用 onMounted
-onMounted(async () => {
-  // 只有在启用自动连接时才连接
-  if (!userStore.wsConfig.autoConnect) {
-    return
-  }
-
+// 获取角色列表
+const fetchRoles = async () => {
   try {
-    const success = await connect(wsConfig.value)
-    if (!success) {
-      AMessage.warning('WebSocket连接失败，部分功能可能不可用')
+    const res = await queryRoles({})
+    if (res.data?.list) {
+      roleList.value = res.data.list
+      // 设置默认选中的角色（第一个默认角色或第一个角色）
+      const defaultRole = roleList.value.find(r => r.isDefault === '1')
+      selectedRoleId.value = defaultRole?.roleId || roleList.value[0]?.roleId
     }
   } catch (error) {
-    console.error('连接WebSocket失败:', error)
+    console.error('获取角色列表失败:', error)
   }
-})
+}
+
+// 切换角色
+const handleRoleChange = async (roleId: number) => {
+  try {
+    // 更新虚拟设备的角色ID
+    await updateDevice({
+      deviceId: wsConfig.value.deviceId,
+      roleId: roleId
+    })
+    
+    AMessage.success('角色切换成功')
+    
+    // 如果已连接，断开连接（下次发送消息时会自动重连，使用新角色）
+    if (isConnected.value) {
+      disconnect()
+    }
+  } catch (error) {
+    AMessage.error('角色切换失败')
+    console.error('角色切换失败:', error)
+  }
+}
+
+// 组件挂载时获取角色列表
+fetchRoles()
 
 // 监听消息变化并滚动到底部
 watch(() => wsMessages.length, () => {
-  scrollToBottom()
+  // 只有当用户在底部时，才自动滚动（避免打断用户查看历史消息）
+  if (isAtBottom.value || wsMessages.length === 1) {
+    scrollToBottom()
+  }
 })
 
 // 切换聊天窗口
@@ -105,15 +113,6 @@ const toggleChat = () => {
 // 关闭聊天窗口
 const closeChat = () => {
   chatVisible.value = false
-}
-
-// 滚动到底部
-const scrollToBottom = () => {
-  nextTick(() => {
-    if (chatContentRef.value) {
-      chatContentRef.value.scrollTop = chatContentRef.value.scrollHeight
-    }
-  })
 }
 
 // 确保WebSocket连接
@@ -148,7 +147,7 @@ const sendTextMessage = async () => {
 
   if (success) {
     inputMessage.value = ''
-    scrollToBottom()
+    nextTick(() => scrollToBottom())
   } else {
     AMessage.error('发送失败，请检查连接状态')
   }
@@ -201,83 +200,6 @@ const clearMessages = () => {
   wsMessages.splice(0, wsMessages.length)
 }
 
-// 打开设置抽屉
-const openSettings = () => {
-  console.log('打开设置抽屉')
-  settingsForm.value = {
-    url: userStore.wsConfig.url,
-    deviceId: userStore.wsConfig.deviceId || 'web_test',
-    deviceName: userStore.wsConfig.deviceName || 'Web用户',
-    autoConnect: userStore.wsConfig.autoConnect
-  }
-  settingsVisible.value = true
-  console.log('settingsVisible:', settingsVisible.value)
-}
-
-// 保存设置
-const saveSettings = async () => {
-  try {
-    // 更新 store
-    userStore.updateWsConfig(settingsForm.value)
-    
-    AMessage.success('配置已保存')
-    
-    // 如果已连接，断开重连
-    if (isConnected.value) {
-      disconnect()
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      if (settingsForm.value.autoConnect) {
-        const success = await connect(wsConfig.value)
-        if (success) {
-          AMessage.success('已重新连接')
-        }
-      }
-    }
-    
-    settingsVisible.value = false
-  } catch (error) {
-    AMessage.error('保存失败: ' + error)
-  }
-}
-
-// 取消设置
-const cancelSettings = () => {
-  settingsVisible.value = false
-}
-
-// 测试连接
-const testConnection = async () => {
-  try {
-    AMessage.loading({ content: '测试连接中...', key: 'testConn', duration: 0 })
-    
-    // 临时使用表单中的配置测试
-    const testConfig = {
-      url: settingsForm.value.url,
-      deviceId: settingsForm.value.deviceId,
-      deviceName: settingsForm.value.deviceName,
-      token: userStore.token
-    }
-    
-    // 断开当前连接
-    if (isConnected.value) {
-      disconnect()
-      await new Promise(resolve => setTimeout(resolve, 300))
-    }
-    
-    // 测试新配置
-    const success = await connect(testConfig)
-    
-    if (success) {
-      AMessage.success({ content: '连接测试成功！', key: 'testConn' })
-    } else {
-      AMessage.error({ content: '连接测试失败', key: 'testConn' })
-    }
-  } catch (error) {
-    AMessage.error({ content: '连接测试失败: ' + error, key: 'testConn' })
-  }
-}
-
 // 格式化时间
 const formatTime = (date: Date) => {
   const now = new Date()
@@ -323,7 +245,7 @@ const connectionStatusDot = computed(() => {
     <a-float-button
       :type="chatVisible ? 'default' : 'primary'"
       @click="toggleChat"
-      :style="{ right: '24px', bottom: '24px' }"
+      :style="{ right: '84px', bottom: '48px' }"
     >
       <template #icon>
         <MessageOutlined v-if="!chatVisible" />
@@ -337,7 +259,20 @@ const connectionStatusDot = computed(() => {
         <!-- 头部 -->
         <div class="chat-header">
           <div class="header-info">
-            <a-avatar :src="aiAvatar" :size="36" />
+            <!-- AI头像 - SVG -->
+            <div class="ai-avatar ai-avatar-header">
+              <svg 
+                class="ai-avatar-icon" 
+                viewBox="0 0 1024 1024" 
+                version="1.1" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  d="M515.53 770.231c4.367 0 8.813-0.267 13.285-0.8 42.89-5.147 79.31-35.125 92.754-76.438 1.013-3.093-0.452-6.4-3.407-7.76-2.929-1.36-6.47-0.187-8.12 2.586-0.16 0.267-17.199 27.791-83.543 36.752-9.93 1.334-19.594 2.028-28.753 2.028-46.483-0.027-67.196-17.55-67.382-17.71-2.343-2.08-5.91-2.133-8.306-0.106-2.423 2.027-2.982 5.547-1.332 8.242 20.234 32.804 56.547 53.206 94.804 53.206z m356.723-411.153c-0.586 0-1.119 0.107-1.677 0.107-38.87-168.291-187.4-293.83-365.481-293.83-182.98 0-334.917 132.474-368.596 307.725-32.746 5.894-57.666 34.672-57.666 69.477v139.301c0 39.045 31.31 70.703 69.966 70.703 21.805 0 41.053-10.294 53.859-26.11 30.934 81.822 93.922 147.803 173.627 182.61 0.191-0.416 1.7-3.349 3.514-5.686 1.258-1.62 2.66-2.952 3.868-2.952 1.252 0 2.397 0.453 3.381 1.147-18.45-13.736-85.087-84.333-99.516-182.853-6.337-43.367 26.143-85.933 63.975-92.974 60.727-11.309 121.135-24.19 181.862-35.285 38.603-7.041 64.987-28.217 81.12-63.475 3.78-8.242 9.239-24.91 11.742-48.94 0.665-3.574 3.593-6.322 7.348-6.322 2.503 0 4.633 1.28 6.044 3.12l1.677-1.04c23.934 34.752 71.403 111.696 78.218 192.828 7.828 92.76 3.461 156.29-67.542 221.286-0.08 0.08-0.186 0.186-0.293 0.267a5.821 5.821 0 0 0-1.57 3.974c0 2 1.065 3.707 2.609 4.747 0.585 0.24 1.172 0.56 1.757 0.8 0.479 0.106 0.931 0.267 1.411 0.267s0.906-0.16 1.331-0.267c1.013-0.533 1.97-1.147 2.956-1.68 71.802-39.553 126.885-105.616 152.336-185.067 10.303 15.308 26.436 26.323 45.18 30.164-30.058 136.713-151.991 222.272-303.05 235.26-9.053-22.456-31.336-38.405-57.507-38.405-34.183 0-61.898 27.07-61.898 60.436s27.714 60.408 61.898 60.408c27.555 0 50.638-17.709 58.651-42.032 174.86-14.216 315.03-118.15 344.29-279.64 25.85-10.803 44.007-36.166 44.007-65.77V430.421c-0.002-39.392-32.164-71.344-71.831-71.344z m-64.508 40.486c-45.605-123.537-163.785-211.79-302.81-211.79-138.44 0-256.193 87.506-302.224 210.243-2.29-2.8-4.979-5.2-7.615-7.628 26.064-149.568 154.787-263.291 309.999-263.291 154.467 0 282.79 112.602 309.705 261.131-2.662 3.574-5.112 7.309-7.055 11.335z m-431.453 409.5l-0.008-0.003c-0.029 0.064-0.03 0.072 0.008 0.003z" 
+                  fill="#ffffff"
+                />
+              </svg>
+            </div>
             <div class="header-text">
               <div class="header-title">AI 助手</div>
               <div class="header-status">
@@ -347,16 +282,23 @@ const connectionStatusDot = computed(() => {
             </div>
           </div>
           <div class="header-actions">
-            <a-button
-              type="text"
+            <!-- 角色切换下拉框 -->
+            <a-select
+              v-model:value="selectedRoleId"
+              placeholder="选择角色"
+              :style="{ width: '120px' }"
               size="small"
-              @click="openSettings"
-              title="设置"
+              @change="handleRoleChange"
+              :dropdown-style="{ zIndex: 2001 }"
             >
-              <template #icon>
-                <SettingOutlined />
-              </template>
-            </a-button>
+              <a-select-option
+                v-for="role in roleList"
+                :key="role.roleId"
+                :value="role.roleId"
+              >
+                {{ role.roleName }}
+              </a-select-option>
+            </a-select>
             <a-button
               type="text"
               size="small"
@@ -384,7 +326,7 @@ const connectionStatusDot = computed(() => {
           <div v-if="wsMessages.length === 0" class="empty-chat">
             <a-empty description="暂无对话记录">
               <template #image>
-                <MessageOutlined :style="{ fontSize: '48px', color: '#d9d9d9' }" />
+                <MessageOutlined :style="{ fontSize: '48px', color: 'var(--ant-color-text-quaternary)' }" />
               </template>
             </a-empty>
           </div>
@@ -399,7 +341,22 @@ const connectionStatusDot = computed(() => {
               <div class="message-wrapper" :class="{ 'user-message': message.isUser, 'ai-message': !message.isUser }">
                 <!-- 头像 -->
                 <div class="message-avatar">
-                  <a-avatar :src="message.isUser ? userAvatar : aiAvatar" :size="32" />
+                  <!-- 用户头像 -->
+                  <a-avatar v-if="message.isUser" :src="userAvatar" :size="32" />
+                  <!-- AI头像 - SVG -->
+                  <div v-else class="ai-avatar">
+                    <svg 
+                      class="ai-avatar-icon" 
+                      viewBox="0 0 1024 1024" 
+                      version="1.1" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path 
+                        d="M515.53 770.231c4.367 0 8.813-0.267 13.285-0.8 42.89-5.147 79.31-35.125 92.754-76.438 1.013-3.093-0.452-6.4-3.407-7.76-2.929-1.36-6.47-0.187-8.12 2.586-0.16 0.267-17.199 27.791-83.543 36.752-9.93 1.334-19.594 2.028-28.753 2.028-46.483-0.027-67.196-17.55-67.382-17.71-2.343-2.08-5.91-2.133-8.306-0.106-2.423 2.027-2.982 5.547-1.332 8.242 20.234 32.804 56.547 53.206 94.804 53.206z m356.723-411.153c-0.586 0-1.119 0.107-1.677 0.107-38.87-168.291-187.4-293.83-365.481-293.83-182.98 0-334.917 132.474-368.596 307.725-32.746 5.894-57.666 34.672-57.666 69.477v139.301c0 39.045 31.31 70.703 69.966 70.703 21.805 0 41.053-10.294 53.859-26.11 30.934 81.822 93.922 147.803 173.627 182.61 0.191-0.416 1.7-3.349 3.514-5.686 1.258-1.62 2.66-2.952 3.868-2.952 1.252 0 2.397 0.453 3.381 1.147-18.45-13.736-85.087-84.333-99.516-182.853-6.337-43.367 26.143-85.933 63.975-92.974 60.727-11.309 121.135-24.19 181.862-35.285 38.603-7.041 64.987-28.217 81.12-63.475 3.78-8.242 9.239-24.91 11.742-48.94 0.665-3.574 3.593-6.322 7.348-6.322 2.503 0 4.633 1.28 6.044 3.12l1.677-1.04c23.934 34.752 71.403 111.696 78.218 192.828 7.828 92.76 3.461 156.29-67.542 221.286-0.08 0.08-0.186 0.186-0.293 0.267a5.821 5.821 0 0 0-1.57 3.974c0 2 1.065 3.707 2.609 4.747 0.585 0.24 1.172 0.56 1.757 0.8 0.479 0.106 0.931 0.267 1.411 0.267s0.906-0.16 1.331-0.267c1.013-0.533 1.97-1.147 2.956-1.68 71.802-39.553 126.885-105.616 152.336-185.067 10.303 15.308 26.436 26.323 45.18 30.164-30.058 136.713-151.991 222.272-303.05 235.26-9.053-22.456-31.336-38.405-57.507-38.405-34.183 0-61.898 27.07-61.898 60.436s27.714 60.408 61.898 60.408c27.555 0 50.638-17.709 58.651-42.032 174.86-14.216 315.03-118.15 344.29-279.64 25.85-10.803 44.007-36.166 44.007-65.77V430.421c-0.002-39.392-32.164-71.344-71.831-71.344z m-64.508 40.486c-45.605-123.537-163.785-211.79-302.81-211.79-138.44 0-256.193 87.506-302.224 210.243-2.29-2.8-4.979-5.2-7.615-7.628 26.064-149.568 154.787-263.291 309.999-263.291 154.467 0 282.79 112.602 309.705 261.131-2.662 3.574-5.112 7.309-7.055 11.335z m-431.453 409.5l-0.008-0.003c-0.029 0.064-0.03 0.072 0.008 0.003z" 
+                        fill="#1890ff"
+                      />
+                    </svg>
+                  </div>
                 </div>
 
                 <!-- 消息气泡 -->
@@ -473,94 +430,6 @@ const connectionStatusDot = computed(() => {
         </div>
       </div>
     </transition>
-
-    <!-- 设置抽屉 -->
-    <a-drawer
-      v-model:open="settingsVisible"
-      title="聊天设置"
-      placement="right"
-      :width="360"
-      :z-index="2000"
-    >
-      <a-form
-        :model="settingsForm"
-        :rules="rules"
-        layout="vertical"
-      >
-        <!-- WebSocket 地址 -->
-        <a-form-item label="服务器地址" name="url">
-          <a-input
-            v-model:value="settingsForm.url"
-            placeholder="ws://127.0.0.1:8091/ws/xiaozhi/v1/"
-          />
-          <template #extra>
-            <div class="form-tip">
-              WebSocket 服务器地址
-            </div>
-          </template>
-        </a-form-item>
-
-        <!-- 设备 ID -->
-        <a-form-item label="设备 ID" name="deviceId">
-          <a-input
-            v-model:value="settingsForm.deviceId"
-            placeholder="web_test"
-          />
-          <template #extra>
-            <div class="form-tip">
-              设备的唯一标识符
-            </div>
-          </template>
-        </a-form-item>
-
-        <!-- 设备名称 -->
-        <a-form-item label="设备名称">
-          <a-input
-            v-model:value="settingsForm.deviceName"
-            placeholder="Web用户"
-          />
-          <template #extra>
-            <div class="form-tip">
-              用于显示的设备名称
-            </div>
-          </template>
-        </a-form-item>
-
-        <!-- 自动连接 -->
-        <a-form-item label="自动连接">
-          <a-switch v-model:checked="settingsForm.autoConnect">
-            <template #checkedChildren>开启</template>
-            <template #unCheckedChildren>关闭</template>
-          </a-switch>
-          <div class="form-tip" style="margin-top: 8px;">
-            打开聊天窗口时自动连接
-          </div>
-        </a-form-item>
-
-        <!-- 连接状态 -->
-        <a-form-item label="当前状态">
-          <a-tag :color="isConnected ? 'success' : 'default'">
-            {{ isConnected ? '已连接' : '未连接' }}
-          </a-tag>
-        </a-form-item>
-      </a-form>
-
-      <template #footer>
-        <div class="drawer-footer">
-          <a-space>
-            <a-button @click="cancelSettings">
-              取消
-            </a-button>
-            <a-button type="dashed" @click="testConnection">
-              测试连接
-            </a-button>
-            <a-button type="primary" @click="saveSettings">
-              保存
-            </a-button>
-          </a-space>
-        </div>
-      </template>
-    </a-drawer>
   </div>
 </template>
 
@@ -589,7 +458,7 @@ const connectionStatusDot = computed(() => {
   bottom: 88px;
   width: 380px;
   height: 600px;
-  background: var(--card-bg);
+  background: var(--ant-color-bg-container);
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   display: flex;
@@ -636,12 +505,12 @@ const connectionStatusDot = computed(() => {
       display: inline-block;
 
       &.online {
-        background: #52c41a;
+        background: var(--ant-color-success);
         animation: pulse-dot 2s infinite;
       }
 
       &.offline {
-        background: #d9d9d9;
+        background: var(--ant-color-text-quaternary);
       }
     }
   }
@@ -659,7 +528,29 @@ const connectionStatusDot = computed(() => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+
+  // 角色选择器样式
+  :deep(.ant-select) {
+    .ant-select-selector {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+      color: var(--ant-color-text-inverse) !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+      }
+    }
+
+    .ant-select-selection-item {
+      color: var(--ant-color-text-inverse) !important;
+    }
+
+    .ant-select-arrow {
+      color: var(--ant-color-text-inverse) !important;
+    }
+  }
 
   :deep(.ant-btn) {
     color: var(--ant-color-text-inverse);
@@ -685,7 +576,7 @@ const connectionStatusDot = computed(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background: var(--bg-color);
+  background: var(--ant-color-bg-base);
   scroll-behavior: smooth;
 
   &::-webkit-scrollbar {
@@ -760,6 +651,30 @@ const connectionStatusDot = computed(() => {
   flex-shrink: 0;
 }
 
+// AI 头像样式
+.ai-avatar {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f5ff;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  
+  &.ai-avatar-header {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.ai-avatar-icon {
+  width: 70%;
+  height: 70%;
+}
+
 .message-content {
   max-width: 75%;
   display: flex;
@@ -801,15 +716,14 @@ const connectionStatusDot = computed(() => {
 }
 
 .ai-message .message-bubble {
-  background: var(--card-bg);
+  background: var(--ant-color-bg-container);
   color: var(--ant-color-text);
-  border: 1px solid var(--ant-color-border);
   
   // 左侧小三角
   &::before {
     left: -7px;
     border-width: 6px 7px 6px 0;
-    border-color: transparent var(--card-bg) transparent transparent;
+    border-color: transparent var(--ant-color-bg-container) transparent transparent;
   }
 }
 
@@ -829,8 +743,8 @@ const connectionStatusDot = computed(() => {
 // 输入区域
 .chat-input {
   padding: 16px;
-  background: var(--card-bg);
-  border-top: 1px solid var(--border-color);
+  background: var(--ant-color-bg-container);
+  border-top: 1px solid var(--ant-color-border);
   flex-shrink: 0;
 }
 
@@ -838,9 +752,9 @@ const connectionStatusDot = computed(() => {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  background: var(--bg-secondary);
+  background: var(--ant-color-fill-tertiary);
   border-radius: 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--ant-color-border);
   transition: all 0.3s;
 
   &:focus-within {
@@ -899,8 +813,8 @@ const connectionStatusDot = computed(() => {
   justify-content: center;
 
   &:disabled {
-    background: var(--bg-disabled);
-    border-color: var(--border-color);
+    background: var(--ant-color-fill-quaternary);
+    border-color: var(--ant-color-border);
   }
 }
 
@@ -911,8 +825,8 @@ const connectionStatusDot = computed(() => {
   font-weight: 500;
 
   &.recording {
-    background: #ff4d4f;
-    border-color: #ff4d4f;
+    background: var(--ant-color-error);
+    border-color: var(--ant-color-error);
     animation: recording-pulse 1.5s infinite;
   }
 }
@@ -948,35 +862,5 @@ const connectionStatusDot = computed(() => {
     height: calc(100vh - 100px);
   }
 }
-
-// 设置抽屉样式
-.form-tip {
-  color: var(--ant-color-text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.drawer-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 10px 16px;
-  border-top: 1px solid var(--ant-color-border);
-}
-
-:deep(.ant-drawer) {
-  .ant-drawer-header {
-    border-bottom: 1px solid var(--ant-color-border);
-  }
-
-  .ant-drawer-body {
-    padding: 24px;
-  }
-
-  .ant-drawer-footer {
-    padding: 0;
-    border-top: none;
-  }
-}
-
 </style>
 

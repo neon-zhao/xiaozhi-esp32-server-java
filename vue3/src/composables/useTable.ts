@@ -3,6 +3,7 @@ import { message } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import type { TablePaginationConfig } from 'ant-design-vue'
 import { useDebounceFn } from '@vueuse/core'
+import type { PageResponse } from '@/types/api'
 
 /**
  * 表格分页管理 Composable（增强版）
@@ -42,7 +43,7 @@ export function useTable<T = any>() {
    * 加载数据（带错误处理）
    */
   const loadData = async (
-    fetchFn: (params: { start: number; limit: number }) => Promise<{ code: number; data?: { list: T[]; total: number; pageNum: number; pageSize: number }; message?: string }>,
+    fetchFn: (params: { start: number; limit: number }) => Promise<PageResponse<T>>,
     options?: {
       showError?: boolean
       onSuccess?: () => void
@@ -64,14 +65,16 @@ export function useTable<T = any>() {
         onSuccess?.()
       } else {
         if (showError) {
-          message.error(res.message || '获取数据失败')
+          message.error(res.message || t('common.loadDataFailed'))
         }
         onError?.(res)
       }
     } catch (error: unknown) {
       console.error('Error loading data:', error)
       if (showError) {
-        const errorMessage = error instanceof Error ? error.message : '获取数据失败'
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : t('common.loadDataFailed')
         message.error(errorMessage)
       }
       onError?.(error)

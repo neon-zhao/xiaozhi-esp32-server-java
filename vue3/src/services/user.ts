@@ -1,12 +1,20 @@
 import { http } from './request'
 import api from './api'
-import type { User, UserQueryParams, UserListResponse, UpdateUserParams } from '@/types/user'
+import type { User, UserQueryParams, UpdateUserParams } from '@/types/user'
+import type { LoginResponse } from '@/store/user'
 
 /**
  * 用户登录
  */
 export function login(data: { username: string; password: string }) {
-  return http.postJSON(api.user.login, data)
+  return http.postJSON<LoginResponse>(api.user.login, data)
+}
+
+/**
+ * 手机号验证码登录
+ */
+export function telLogin(data: { tel: string; code: string }) {
+  return http.postJSON<LoginResponse>(api.user.telLogin, data)
 }
 
 /**
@@ -49,6 +57,13 @@ export function sendEmailCaptcha(data: { email: string; type: string }) {
 }
 
 /**
+ * 发送短信验证码
+ */
+export function sendSmsCaptcha(data: { tel: string; type: string }) {
+  return http.postJSON(api.user.sendSmsCaptcha, data)
+}
+
+/**
  * 验证验证码
  */
 export function checkCaptcha(data: { email: string; code: string; type: string }) {
@@ -58,15 +73,15 @@ export function checkCaptcha(data: { email: string; code: string; type: string }
 /**
  * 查询用户列表
  */
-export function queryUsers(params: UserQueryParams) {
-  return http.get<UserListResponse>(api.user.queryUsers, params)
+export function queryUsers(params: Partial<UserQueryParams>) {
+  return http.getPage<User>(api.user.queryUsers, params)
 }
 
 /**
  * 更新用户信息
  */
-export function updateUser(data: UpdateUserParams) {
-  return http.postJSON(api.user.update, data as Record<string, unknown>)
+export function updateUser(data: Partial<UpdateUserParams>) {
+  return http.postJSON(api.user.update, data)
 }
 
 /**

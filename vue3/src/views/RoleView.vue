@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, computed } from 'vue'
-import { message, type FormInstance, type UploadProps } from 'ant-design-vue'
+import { message, Empty, type FormInstance, type UploadProps } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { 
   UserOutlined, 
@@ -8,19 +8,24 @@ import {
   CameraOutlined, 
   DeleteOutlined, 
   SnippetsOutlined,
-  SoundOutlined
+  SoundOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router'
 import { useTable } from '@/composables/useTable'
 import { useRoleManager } from '@/composables/useRoleManager'
-import { queryRoles, addRole, updateRole, testVoice, queryTemplates } from '@/services/role'
+import { useLoadingStore } from '@/store/loading'
+import { queryRoles, addRole, updateRole, testVoice } from '@/services/role'
+import { queryTemplates } from '@/services/template'
 import { getResourceUrl } from '@/utils/resource'
 import { useAvatar } from '@/composables/useAvatar'
-import { uploadAvatar } from '@/services/upload'
+import { uploadFile } from '@/services/upload'
 import type { Role, RoleFormData, PromptTemplate } from '@/types/role'
 import type { TableColumnsType, TablePaginationConfig } from 'ant-design-vue'
+import TableActionButtons from '@/components/TableActionButtons.vue'
 
 const { t } = useI18n()
+const loadingStore = useLoadingStore()
 const { getAvatarUrl } = useAvatar()
 
 const router = useRouter()
@@ -41,7 +46,7 @@ const {
   loadAllVoices,
   loadSttOptions,
   getModelInfo,
-  getVoiceInfo,
+  getVoiceInfo
 } = useRoleManager()
 
 // 查询表单
@@ -83,6 +88,7 @@ const avatarLoading = ref(false)
 
 // 音色播放状态
 const playingVoiceId = ref<string>('')
+const loadingVoiceId = ref<string>('') // loading状态（API请求期间）
 const voiceAudioCache = new Map<string, HTMLAudioElement>()
 
 // 提示词模板
@@ -90,6 +96,9 @@ const promptEditorMode = ref<'custom' | 'template'>('custom')
 const selectedTemplateId = ref<number>()
 const promptTemplates = ref<PromptTemplate[]>([])
 const templatesLoading = ref(false)
+
+const selectedTtsId = ref<number | string>('edge_default')
+const selectedProvider = ref<string>('edge')
 
 // 折叠面板展开状态
 const modelAdvancedVisible = ref<string[]>([])
@@ -108,37 +117,37 @@ const columns = computed<TableColumnsType>(() => [
     align: 'center'
   },
   {
-    title: t('device.roleName'),
+    title: t('role.roleName'),
     dataIndex: 'roleName',
     width: 120,
     align: 'center'
   },
   {
-    title: t('device.roleDesc'),
+    title: t('role.roleDesc'),
     dataIndex: 'roleDesc',
     width: 200,
     align: 'center'
   },
   {
-    title: t('device.voiceName'),
+    title: t('role.voiceName'),
     dataIndex: 'voiceName',
     width: 200,
     align: 'center'
   },
   {
-    title: t('device.modelName'),
+    title: t('role.modelName'),
     dataIndex: 'modelName',
     width: 200,
     align: 'center'
   },
   {
-    title: t('device.sttName'),
+    title: t('role.sttName'),
     dataIndex: 'sttName',
     width: 150,
     align: 'center'
   },
   {
-    title: t('device.totalDevice'),
+    title: t('role.totalDevice'),
     dataIndex: 'totalDevice',
     width: 100,
     align: 'center'
@@ -152,7 +161,7 @@ const columns = computed<TableColumnsType>(() => [
   {
     title: t('table.action'),
     dataIndex: 'operation',
-    width: 180,
+    width: 200,
     align: 'center',
     fixed: 'right'
   }
@@ -234,36 +243,42 @@ const handleEdit = (record: Role) => {
 
 // 删除角色
 const handleDelete = async (roleId: number) => {
+  loading.value = true
   try {
     const res = await updateRole({ roleId, state: '0' })
     if (res.code === 200) {
-      message.success(t('device.deleteRoleSuccess'))
-      fetchData()
+      message.success(t('role.deleteRoleSuccess'))
+      await fetchData()
     } else {
-      message.error(res.message || t('device.deleteRoleFailed'))
+      message.error(res.message || t('role.deleteRoleFailed'))
     }
   } catch (error) {
     console.error('删除角色失败:', error)
-    message.error(t('device.deleteRoleFailed'))
+    message.error(t('role.deleteRoleFailed'))
+  } finally {
+    loading.value = false
   }
 }
 
 // 设为默认角色
 const handleSetDefault = async (roleId: number) => {
+  loading.value = true
   try {
     const res = await updateRole({ 
       roleId, 
-      isDefault: 1,
+      isDefault: '1',
     })
     if (res.code === 200) {
-      message.success(t('device.setAsDefaultSuccess'))
-      fetchData()
+      message.success(t('role.setAsDefaultSuccess'))
+      await fetchData()
     } else {
-      message.error(res.message || t('device.setAsDefaultFailed'))
+      message.error(res.message || t('role.setAsDefaultFailed'))
     }
   } catch (error) {
     console.error('设置默认角色失败:', error)
-    message.error(t('device.setAsDefaultFailed'))
+    message.error(t('role.setAsDefaultFailed'))
+  } finally {
+    loading.value = false
   }
 }
 
@@ -273,33 +288,39 @@ const handleSubmit = async () => {
     await formRef.value?.validate()
     submitLoading.value = true
 
-    // 获取语音信息以获取ttsId
-    const voiceInfo = getVoiceInfo(formData.voiceName || '')
+    // 统一处理：从所有可用音色中查找
+    const voiceInfo = filteredVoices.value.find(v => v.value === formData.voiceName)
+    const ttsId = voiceInfo?.ttsId || -1
     
     const submitData = {
       ...formData,
       avatar: avatarUrl.value,
-      isDefault: formData.isDefault ? 1 : 0,
-      ttsId: voiceInfo?.ttsId || -1,
-      ...(editingRoleId.value ? { roleId: editingRoleId.value } : {})
+      // 将 isDefault 布尔值转换为字符串 '1' 或 '0'
+      isDefault: formData.isDefault ? '1' : '0',
+      ttsId: ttsId
     }
 
+    if (editingRoleId.value) {
+      submitData.roleId = editingRoleId.value
+    }
+
+    // 1. 保存角色信息
     const res = editingRoleId.value 
       ? await updateRole(submitData)
       : await addRole(submitData)
 
     if (res.code === 200) {
-      message.success(editingRoleId.value ? t('device.updateRoleSuccess') : t('device.createRoleSuccess'))
+      message.success(editingRoleId.value ? t('role.updateRoleSuccess') : t('role.createRoleSuccess'))
       resetForm()
       activeTabKey.value = '1'
       fetchData()
     } else {
-      message.error(res.message || t('device.operationFailed'))
+      message.error(res.message || t('common.operationFailed'))
     }
   } catch (error: unknown) {
     console.error('提交表单失败:', error)
     if (error && typeof error === 'object' && 'errorFields' in error) {
-      message.error(t('device.checkForm'))
+      message.error(t('role.checkForm'))
     }
   } finally {
     submitLoading.value = false
@@ -377,6 +398,14 @@ const handleModelChange = (modelId: number | undefined) => {
   }
 }
 
+// 音色类型切换
+const handleVoiceTypeChange = () => {
+  // 清空当前选择的音色
+  formData.voiceName = undefined
+  formData.ttsId = undefined
+  formData.gender = ''
+}
+
 // 播放音色示例
 const handlePlayVoice = async (voiceName: string) => {
   try {
@@ -400,27 +429,33 @@ const handlePlayVoice = async (voiceName: string) => {
       }
     }
 
-    playingVoiceId.value = voiceName
+    // 设置loading状态（API请求期间）
+    loadingVoiceId.value = voiceName
 
     // 检查缓存
     let audio = voiceAudioCache.get(voiceName)
     
     if (!audio) {
-      // 获取音色信息
-      const voiceInfo = getVoiceInfo(voiceName)
+      // 统一处理：从所有可用音色中查找
+      const voiceInfo = filteredVoices.value.find(v => v.value === voiceName)
       if (!voiceInfo) {
-        message.error(t('device.voiceNotFound'))
-        playingVoiceId.value = ''
+        message.error(t('role.voiceNotFound'))
+        loadingVoiceId.value = ''
         return
       }
 
-      // 调用测试接口获取音频URL
-      const result = await testVoice({
-        message: t('device.voiceTestMessage'),
+      const testParams = {
+        message: t('role.voiceTestMessage'),
         voiceName: voiceName,
         ttsId: voiceInfo.ttsId || -1,
         provider: voiceInfo.provider
-      })
+      }
+
+      // 调用测试接口获取音频URL
+      const result: any = await testVoice(testParams)
+      
+      // 清除loading状态
+      loadingVoiceId.value = ''
 
       if (result.code === 200 && result.data) {
         // 使用 getResourceUrl 处理音频路径
@@ -430,8 +465,7 @@ const handlePlayVoice = async (voiceName: string) => {
           audio = new Audio(audioUrl)
           voiceAudioCache.set(voiceName, audio)
         } else {
-          message.error(t('device.audioUrlInvalid'))
-          playingVoiceId.value = ''
+          message.error(t('common.audioUrlInvalid'))
           return
         }
         
@@ -444,25 +478,30 @@ const handlePlayVoice = async (voiceName: string) => {
         
         // 监听错误
         audio.onerror = () => {
-          message.error(t('device.audioPlayFailed'))
+          message.error(t('common.audioPlayFailed'))
           playingVoiceId.value = ''
           voiceAudioCache.delete(voiceName)
         }
       } else {
-        message.error(t('device.getTestAudioFailed'))
-        playingVoiceId.value = ''
+        message.error(t('role.getTestAudioFailed'))
         return
       }
+    } else {
+      // 清除loading状态
+      loadingVoiceId.value = ''
     }
 
     // 播放音频
     if (audio) {
       await audio.play()
+      // 播放成功后设置playing状态
+      playingVoiceId.value = voiceName
     }
   } catch (error: unknown) {
     console.error('播放音色失败:', error)
-    const errorMessage = error instanceof Error ? error.message : t('device.playVoiceFailed')
+    const errorMessage = error instanceof Error ? error.message : t('role.playVoiceFailed')
     message.error(errorMessage)
+    loadingVoiceId.value = ''
     playingVoiceId.value = ''
   }
 }
@@ -551,8 +590,8 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
 }
 
 // 上传头像文件
-const uploadAvatarFile = (file: File): Promise<string> => {
-  return uploadAvatar(file)
+const uploadAvatarFile = async (file: File): Promise<string> => {
+  return await uploadFile(file, 'avatar') as string
 }
 
 // 移除头像
@@ -565,28 +604,44 @@ const getAvatar = (avatar?: string) => {
   return getAvatarUrl(avatar)
 }
 
+// 获取音色显示名称
+const getVoiceDisplayName = (record: any) => {
+  if (!record.voiceName) return ''
+  
+  // 统一处理：从所有可用音色中查找
+  const voiceInfo = allVoices.value.find(v => v.value === record.voiceName)
+  return voiceInfo?.label || record.voiceName
+}
+
 // 加载提示词模板
 const loadTemplates = async () => {
   try {
     templatesLoading.value = true
     const res = await queryTemplates({})
-    if (res.code === 200 && res.data && 'list' in res.data) {
+    if (res.code === 200 && res.data) {
       promptTemplates.value = (res.data.list || []) as PromptTemplate[]
     }
   } catch (error) {
     console.error('加载模板列表失败:', error)
-    message.error(t('device.loadTemplateFailed'))
+    message.error(t('role.loadTemplateFailed'))
   } finally {
     templatesLoading.value = false
   }
 }
 
-// 并行加载所有数据
-await Promise.all([
+// 根据音色类型过滤音色选项
+const filteredVoices = computed(() => {
+  // 标准音色：显示所有标准音色
+  return allVoices.value
+})
+
+// 初始化：并行加载所有数据（非阻塞式）
+Promise.all([
   loadAllModels(),
   loadAllVoices(),
   loadSttOptions(),
-  loadTemplates()
+  loadTemplates(),
+  fetchData()
 ])
 
 // 加载模板后，应用默认模板（新建时）
@@ -598,8 +653,6 @@ if (!editingRoleId.value) {
   }
 }
 
-// 加载角色列表
-await fetchData()
 </script>
 
 <template>
@@ -609,10 +662,10 @@ await fetchData()
       <a-form layout="horizontal" :colon="false">
         <a-row :gutter="16">
           <a-col :xl="8" :lg="12" :xs="24">
-            <a-form-item :label="t('device.roleName')">
+            <a-form-item :label="t('role.roleName')">
               <a-input
                 v-model:value="searchForm.roleName"
-                :placeholder="t('device.enterRoleName')"
+                :placeholder="t('role.enterRoleName')"
                 allow-clear
                 @input="debouncedSearch"
               />
@@ -629,7 +682,7 @@ await fetchData()
         @change="handleTabChange"
       >
         <!-- 角色列表 -->
-        <a-tab-pane key="1" :tab="t('device.roleList')">
+        <a-tab-pane key="1" :tab="t('role.roleList')">
           <a-table
             row-key="roleId"
             :columns="columns"
@@ -664,11 +717,11 @@ await fetchData()
               <!-- 音色 -->
               <template v-else-if="column.dataIndex === 'voiceName'">
                 <a-tooltip 
-                  :title="record.voiceName ? (getVoiceInfo(record.voiceName)?.label || record.voiceName) : ''"
+                  :title="getVoiceDisplayName(record)"
                   placement="top"
                 >
                   <span v-if="record.voiceName" class="ellipsis-text">
-                    {{ getVoiceInfo(record.voiceName)?.label || record.voiceName }}
+                    {{ getVoiceDisplayName(record) }}
                   </span>
                   <span v-else>-</span>
                 </a-tooltip>
@@ -677,12 +730,12 @@ await fetchData()
               <!-- 模型 -->
               <template v-else-if="column.dataIndex === 'modelName'">
                 <a-tooltip 
-                  :title="getModelInfo(record.modelId)?.desc || (getModelInfo(record.modelId)?.label || record.modelName || t('device.unknownModel'))"
+                  :title="getModelInfo(record.modelId)?.desc || (getModelInfo(record.modelId)?.label || record.modelName || t('role.unknownModel'))"
                   :mouse-enter-delay="0.5"
                   placement="top"
                 >
                   <span v-if="record.modelId" class="ellipsis-text">
-                    {{ getModelInfo(record.modelId)?.label || record.modelName || t('device.unknownModel') }}
+                    {{ getModelInfo(record.modelId)?.label || record.modelName || t('role.unknownModel') }}
                   </span>
                   <span v-else>-</span>
                 </a-tooltip>
@@ -691,14 +744,14 @@ await fetchData()
               <!-- 语音识别 -->
               <template v-else-if="column.dataIndex === 'sttName'">
                 <a-tooltip 
-                  :title="record.sttId === -1 || record.sttId === null ? t('device.voskLocalRecognition') : (sttOptions.find(s => s.value === record.sttId)?.label || t('device.unknown'))"
+                  :title="record.sttId === -1 || record.sttId === null ? t('role.voskLocalRecognition') : (sttOptions.find(s => s.value === record.sttId)?.label || t('common.unknown'))"
                   placement="top"
                 >
                   <span v-if="record.sttId === -1 || record.sttId === null" class="ellipsis-text">
-                    {{ t('device.voskLocalRecognition') }}
+                    {{ t('role.voskLocalRecognition') }}
                   </span>
                   <span v-else class="ellipsis-text">
-                    {{ sttOptions.find(s => s.value === record.sttId)?.label || t('device.unknown') }}
+                    {{ sttOptions.find(s => s.value === record.sttId)?.label || t('common.unknown') }}
                   </span>
                 </a-tooltip>
               </template>
@@ -711,25 +764,24 @@ await fetchData()
 
               <!-- 操作 -->
               <template v-else-if="column.dataIndex === 'operation'">
-                <a-space>
-                  <a @click="handleEdit(record)">{{ t('common.edit') }}</a>
-                  <a v-if="record.isDefault != 1" @click="handleSetDefault(record.roleId)">
-                    {{ t('common.setAsDefault') }}
-                  </a>
-                  <a-popconfirm
-                    :title="t('device.confirmDeleteRole')"
-                    @confirm="handleDelete(record.roleId)"
-                  >
-                    <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
-                  </a-popconfirm>
-                </a-space>
+                <TableActionButtons
+                  :record="record"
+                  show-edit
+                  show-set-default
+                  show-delete
+                  :is-default="record.isDefault == 1"
+                  :delete-title="t('role.confirmDeleteRole')"
+                  @edit="handleEdit"
+                  @set-default="() => handleSetDefault(record.roleId)"
+                  @delete="() => handleDelete(record.roleId)"
+                />
               </template>
             </template>
           </a-table>
         </a-tab-pane>
 
         <!-- 创建/编辑角色 -->
-        <a-tab-pane key="2" :tab="t('device.createRole')">
+        <a-tab-pane key="2" :tab="t('role.createRole')">
           <a-form
             ref="formRef"
             :model="formData"
@@ -791,69 +843,69 @@ await fetchData()
 
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item
-                  :label="t('device.roleName')"
+                  :label="t('role.roleName')"
                   name="roleName"
-                  :rules="[{ required: true, message: t('device.enterRoleName') }]"
+                  :rules="[{ required: true, message: t('role.enterRoleName') }]"
                 >
                   <a-input
                     v-model:value="formData.roleName"
-                    :placeholder="t('device.enterRoleName')"
+                    :placeholder="t('role.enterRoleName')"
                   />
                 </a-form-item>
               </a-col>
 
               <a-col :span="24">
-                <a-form-item :label="t('device.setAsDefaultRole')">
+                <a-form-item :label="t('role.setAsDefaultRole')">
                   <a-switch v-model:checked="formData.isDefault" />
-                  <span style="margin-left: 8px; color: #999">
-                    {{ t('device.defaultRoleTip') }}
+                  <span style="margin-left: 8px; color: var(--ant-color-text-tertiary)">
+                    {{ t('role.defaultRoleTip') }}
                   </span>
                 </a-form-item>
               </a-col>
             </a-row>
 
             <!-- 对话模型设置 -->
-            <a-divider orientation="left">{{ t('device.conversationModelSettings') }}</a-divider>
+            <a-divider orientation="left">{{ t('role.conversationModelSettings') }}</a-divider>
 
             <a-row :gutter="20">
               <a-col :span="24">
-                <a-form-item :label="t('device.modelType')" name="modelType">
+                <a-form-item :label="t('role.modelType')" name="modelType">
                   <a-radio-group
                     v-model:value="formData.modelType"
                     button-style="solid"
                     @change="handleModelTypeChange"
                   >
-                    <a-radio-button value="llm">{{ t('device.llmModel') }}</a-radio-button>
-                    <a-radio-button value="agent">{{ t('device.agent') }}</a-radio-button>
+                    <a-radio-button value="llm">{{ t('role.llmModel') }}</a-radio-button>
+                    <a-radio-button value="agent">{{ t('role.agent') }}</a-radio-button>
                   </a-radio-group>
                 </a-form-item>
               </a-col>
 
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item
-                  :label="t('device.model')"
+                  :label="t('role.model')"
                   name="modelId"
-                  :rules="[{ required: true, message: t('device.selectModel') }]"
+                  :rules="[{ required: true, message: t('role.selectModel') }]"
                 >
                   <a-select
-    v-model:value="formData.modelId"
-    :placeholder="t('device.selectModel')"
-    :loading="modelLoading"
-    show-search
-    :filter-option="(input: string, option: { label: string; value: number }) => 
-      option.label.toLowerCase().includes(input.toLowerCase())
-    "
-    @change="(value: number) => handleModelChange(value)"
-  >
-    <a-select-option
-      v-for="model in allModels.filter(m => m.type === formData.modelType)"
-      :key="model.value"
-      :value="model.value"
-      :label="model.label"
-    >
-      {{ model.label }}
-    </a-select-option>
-  </a-select>
+                    v-model:value="formData.modelId"
+                    :placeholder="t('role.selectModel')"
+                    :loading="modelLoading"
+                    show-search
+                    :filter-option="(input: string, option: { label: string; value: number }) => 
+                      option.label.toLowerCase().includes(input.toLowerCase())
+                    "
+                    @change="(value: number) => handleModelChange(value)"
+                  >
+                    <a-select-option
+                      v-for="model in allModels.filter(m => m.type === formData.modelType)"
+                      :key="model.value"
+                      :value="model.value"
+                      :label="model.label"
+                    >
+                      {{ model.label }}
+                    </a-select-option>
+                  </a-select>
                 </a-form-item>
               </a-col>
             </a-row>
@@ -865,18 +917,18 @@ await fetchData()
               style="background: transparent; margin-bottom: 24px"
               @change="handleModelCollapseChange"
             >
-              <a-collapse-panel :header="t('device.conversationModelAdvanced')" key="advanced">
+              <a-collapse-panel :header="t('role.conversationModelAdvanced')" key="advanced">
                 <a-row :gutter="16">
                   <a-col :xl="8" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.temperature')"
+                      :label="t('role.temperature')"
                       name="temperature"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
                     >
                       <a-tooltip placement="top">
                         <template #title>
-                          <div v-html="t('device.temperatureTip').replace(/\n/g, '<br>')"></div>
+                          <div v-html="t('role.temperatureTip').replace(/\n/g, '<br>')"></div>
                         </template>
                         <a-input-number
                           v-model:value="formData.temperature"
@@ -891,14 +943,14 @@ await fetchData()
 
                   <a-col :xl="8" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.topP')"
+                      :label="t('role.topP')"
                       name="topP"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
                     >
                       <a-tooltip placement="top">
                         <template #title>
-                          <div v-html="t('device.topPTip').replace(/\n/g, '<br>')"></div>
+                          <div v-html="t('role.topPTip').replace(/\n/g, '<br>')"></div>
                         </template>
                         <a-input-number
                           v-model:value="formData.topP"
@@ -915,18 +967,18 @@ await fetchData()
             </a-collapse>
 
             <!-- 语音识别设置 -->
-            <a-divider orientation="left">{{ t('device.speechRecognitionSettings') }}</a-divider>
+            <a-divider orientation="left">{{ t('role.speechRecognitionSettings') }}</a-divider>
 
             <a-row :gutter="20">
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item
-                  :label="t('device.speechRecognition')"
+                  :label="t('role.speechRecognition')"
                   name="sttId"
-                  :rules="[{ required: true, message: t('device.selectSpeechRecognition') }]"
+                  :rules="[{ required: true, message: t('role.selectSpeechRecognition') }]"
                 >
                   <a-select
                     v-model:value="formData.sttId"
-                    :placeholder="t('device.selectSpeechRecognition')"
+                    :placeholder="t('role.selectSpeechRecognition')"
                     :loading="sttLoading"
                   >
                     <a-select-option
@@ -948,11 +1000,11 @@ await fetchData()
               style="background: transparent; margin-bottom: 24px"
               @change="handleVadCollapseChange"
             >
-              <a-collapse-panel :header="t('device.speechRecognitionAdvanced')" key="vad">
+              <a-collapse-panel :header="t('role.speechRecognitionAdvanced')" key="vad">
                 <a-row :gutter="16">
                   <a-col :xl="6" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.speechThreshold')"
+                      :label="t('role.speechThreshold')"
                       name="vadSpeechTh"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
@@ -969,7 +1021,7 @@ await fetchData()
 
                   <a-col :xl="6" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.silenceThreshold')"
+                      :label="t('role.silenceThreshold')"
                       name="vadSilenceTh"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
@@ -986,7 +1038,7 @@ await fetchData()
 
                   <a-col :xl="6" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.energyThreshold')"
+                      :label="t('role.energyThreshold')"
                       name="vadEnergyTh"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
@@ -1003,7 +1055,7 @@ await fetchData()
 
                   <a-col :xl="6" :lg="12" :xs="24">
                     <a-form-item
-                      :label="t('device.silenceDuration')"
+                      :label="t('role.silenceDuration')"
                       name="vadSilenceMs"
                       :label-col="{ span: 10 }"
                       :wrapper-col="{ span: 14 }"
@@ -1022,18 +1074,19 @@ await fetchData()
             </a-collapse>
 
             <!-- 语音合成设置 -->
-            <a-divider orientation="left">{{ t('device.voiceSynthesisSettings') }}</a-divider>
+            <a-divider orientation="left">{{ t('role.voiceSynthesisSettings') }}</a-divider>
 
+            <!-- 音色选择 -->
             <a-row :gutter="20">
               <a-col :xl="8" :lg="12" :xs="24">
                 <a-form-item
-                  :label="t('device.voiceName')"
+                  :label="t('role.voiceName')"
                   name="voiceName"
-                  :rules="[{ required: true, message: t('device.selectVoice') }]"
+                  :rules="[{ required: true, message: t('role.selectVoice') }]"
                 >
                   <a-select
                     v-model:value="formData.voiceName"
-                    :placeholder="t('device.selectVoice')"
+                    :placeholder="t('role.selectVoice')"
                     :loading="voiceLoading"
                     show-search
                     :filter-option="(input: string, option: { label: string; value: string }) => 
@@ -1041,7 +1094,7 @@ await fetchData()
                     "
                   >
                     <a-select-option
-                      v-for="voice in allVoices"
+                      v-for="voice in filteredVoices"
                       :key="voice.value"
                       :value="voice.value"
                       :label="voice.label"
@@ -1051,12 +1104,13 @@ await fetchData()
                         <a-button
                           type="text"
                           size="small"
-                          :loading="playingVoiceId === voice.value"
+                          :loading="loadingVoiceId === voice.value"
                           @click.stop="handlePlayVoice(voice.value)"
                           style="margin-left: 8px; padding: 0 4px;"
                         >
                           <template #icon>
-                            <LoadingOutlined v-if="playingVoiceId === voice.value" />
+                            <LoadingOutlined v-if="loadingVoiceId === voice.value" />
+                            <PauseCircleOutlined v-else-if="playingVoiceId === voice.value" />
                             <SoundOutlined v-else />
                           </template>
                         </a-button>
@@ -1067,15 +1121,14 @@ await fetchData()
               </a-col>
             </a-row>
 
-
             <!-- 角色提示词 -->
-            <a-divider orientation="left">{{ t('device.rolePrompt') }}</a-divider>
+            <a-divider orientation="left">{{ t('role.rolePrompt') }}</a-divider>
 
             <!-- 智能体提示 -->
             <a-alert
               v-if="formData.modelType === 'agent'"
-              :message="t('device.agentPrompt')"
-              :description="t('device.agentPromptDesc')"
+              :message="t('role.agentPrompt')"
+              :description="t('role.agentPromptDesc')"
               type="info"
               show-icon
               style="margin-bottom: 16px"
@@ -1090,15 +1143,15 @@ await fetchData()
                     button-style="solid"
                     @change="handlePromptModeChange"
                   >
-                    <a-radio-button value="template">{{ t('device.useTemplate') }}</a-radio-button>
-                    <a-radio-button value="custom">{{ t('device.custom') }}</a-radio-button>
+                    <a-radio-button value="template">{{ t('role.useTemplate') }}</a-radio-button>
+                    <a-radio-button value="custom">{{ t('role.custom') }}</a-radio-button>
                   </a-radio-group>
 
                   <template v-if="promptEditorMode === 'template'">
                     <a-select
                       v-model:value="selectedTemplateId"
                       style="width: 200px"
-                      :placeholder="t('device.selectTemplate')"
+                      :placeholder="t('role.selectTemplate')"
                       :loading="templatesLoading"
                       @change="handleTemplateChange"
                     >
@@ -1117,7 +1170,7 @@ await fetchData()
                 </a-space>
 
                 <a-button type="primary" @click="goToTemplateManager">
-                  <snippets-outlined /> {{ t('device.templateManagement') }}
+                  <snippets-outlined /> {{ t('role.templateManagement') }}
                 </a-button>
               </div>
             </template>
@@ -1128,17 +1181,17 @@ await fetchData()
                 v-model:value="formData.roleDesc"
                 :disabled="formData.modelType === 'agent'"
                 :rows="10"
-                :placeholder="t('device.enterRolePrompt')"
+                :placeholder="t('role.enterRolePrompt')"
               />
             </a-form-item>
 
             <!-- 表单操作按钮 -->
             <a-form-item>
               <a-button type="primary" html-type="submit" :loading="submitLoading">
-                {{ editingRoleId ? t('device.updateRole') : t('device.createRole') }}
+                {{ editingRoleId ? t('role.updateRole') : t('role.createRole') }}
               </a-button>
               <a-button style="margin-left: 8px" @click="handleCancel">
-                {{ t('device.cancel') }}
+                {{ t('role.cancel') }}
               </a-button>
             </a-form-item>
           </a-form>
@@ -1176,14 +1229,14 @@ await fetchData()
   width: 128px;
   height: 128px;
   border-radius: 64px;
-  background-color: #fafafa;
-  border: 1px dashed #d9d9d9;
+  background-color: var(--ant-color-fill-quaternary);
+  border: 1px dashed var(--ant-color-border);
   overflow: hidden;
   transition: all 0.3s;
 }
 
 .avatar-content:hover {
-  border-color: #1890ff;
+  border-color: var(--ant-color-primary);
 }
 
 .avatar-placeholder {
@@ -1192,7 +1245,7 @@ await fetchData()
   justify-content: center;
   align-items: center;
   height: 100%;
-  color: #999;
+  color: var(--ant-color-text-tertiary);
 
   .anticon {
     font-size: 32px;
@@ -1239,7 +1292,7 @@ await fetchData()
 
 .avatar-tip {
   margin-top: 8px;
-  color: #8c8c8c;
+  color: var(--ant-color-text-tertiary);
   font-size: 12px;
 }
 
@@ -1249,7 +1302,7 @@ await fetchData()
 }
 
 :deep(.ant-collapse-borderless > .ant-collapse-item) {
-  border-bottom: 1px dashed #e8e8e8;
+  border-bottom: 1px dashed var(--ant-color-border);
 }
 
 :deep(.ant-collapse-borderless > .ant-collapse-item:last-child) {
@@ -1258,14 +1311,10 @@ await fetchData()
 
 // 折叠面板标题颜色（适配深色模式）
 :deep(.ant-collapse-header) {
-  color: var(--text-color) !important;
+  color: var(--ant-color-text) !important;
 }
 
-// 深色模式下的边框
-html.dark :deep(.ant-collapse-borderless > .ant-collapse-item),
-html[data-theme='dark'] :deep(.ant-collapse-borderless > .ant-collapse-item) {
-  border-bottom-color: #434343;
-}
+// 使用 Ant Design 变量，无需特殊处理
 
 // 表格文字省略样式
 .ellipsis-text {
@@ -1283,4 +1332,7 @@ html[data-theme='dark'] :deep(.ant-collapse-borderless > .ant-collapse-item) {
   }
 }
 
+:deep(.ant-select-selection-item-content) {
+  max-width: 100px; // 设置最大宽度
+}
 </style>

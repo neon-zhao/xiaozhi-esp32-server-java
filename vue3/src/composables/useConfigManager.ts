@@ -6,18 +6,18 @@ import { queryConfigs, addConfig, updateConfig, getModels } from '@/services/con
 import { configTypeMap } from '@/config/providerConfig'
 import llmFactoriesData from '@/config/llm_factories.json'
 import { useTable } from './useTable'
+import { useLoadingStore } from '@/store/loading'
 
 export function useConfigManager(configType: ConfigType) {
   const { t } = useI18n()
+  const loadingStore = useLoadingStore()
   
   // 使用统一的表格管理
   const {
     loading,
     data: configItems,
     pagination,
-    handleTableChange,
     loadData,
-    resetPagination
   } = useTable<Config>()
 
   // 状态
@@ -152,11 +152,11 @@ export function useConfigManager(configType: ConfigType) {
   /**
    * 获取配置列表
    */
-  async function getData() {
-    await loadData((params) => {
+  async function fetchData() {
+    await loadData(async ({ start, limit }) => {
       return queryConfigs({
-        start: params.start,
-        limit: params.limit,
+        start,
+        limit,
         configType,
         ...queryForm.value,
       })
@@ -164,7 +164,7 @@ export function useConfigManager(configType: ConfigType) {
   }
 
   /**
-   * 删除配置
+   * 删除配置（快速操作，只用 table loading）
    */
   async function deleteConfig(configId: string) {
     loading.value = true
@@ -177,20 +177,20 @@ export function useConfigManager(configType: ConfigType) {
 
       if (res.code === 200) {
         message.success(t('common.delete'))
-        getData()
+        await fetchData()
       } else {
         message.error(res.message)
       }
     } catch (error) {
       console.error('删除配置失败:', error)
-      message.error(t('message.prompt.serverMaintenance'))
+      message.error(t('common.serverMaintenance'))
     } finally {
       loading.value = false
     }
   }
 
   /**
-   * 设置为默认配置
+   * 设置为默认配置（快速操作，只用 table loading）
    */
   async function setAsDefault(record: Config) {
     if (configType === 'tts') return
@@ -206,13 +206,13 @@ export function useConfigManager(configType: ConfigType) {
 
       if (res.code === 200) {
         message.success(t('common.setDefaultSuccess', { name: record.configName }))
-        getData()
+        await fetchData()
       } else {
         message.error(res.message || t('common.setDefaultFailed'))
       }
     } catch (error) {
       console.error('设置默认配置失败:', error)
-      message.error(t('message.prompt.serverMaintenance'))
+      message.error(t('common.serverMaintenance'))
     } finally {
       loading.value = false
     }
@@ -221,7 +221,7 @@ export function useConfigManager(configType: ConfigType) {
   /**
    * 获取API模型列表
    */
-  async function fetchModels(formData: any) {
+  async function fetchModels(formData: Config) {
     if (!formData.apiKey || !formData.apiUrl) {
       return
     }
@@ -261,7 +261,7 @@ export function useConfigManager(configType: ConfigType) {
     currentTypeFields,
     
     // 方法
-    getData,
+    fetchData,
     deleteConfig,
     setAsDefault,
     updateModelOptions,

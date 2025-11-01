@@ -9,7 +9,7 @@ declare module 'jsonp' {
   function jsonp(
     url: string,
     options: JsonpOptions,
-    callback: (err: Error | null, data: any) => void
+    callback: (err: Error | null, data: unknown) => void
   ): void
 
   export = jsonp

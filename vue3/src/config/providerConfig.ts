@@ -535,9 +535,10 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
     label: 'config.stt',
     typeOptions: [
       { label: 'Tencent', value: 'tencent', key: '0' },
-      { label: 'Aliyun', value: 'aliyun', key: '1' },
-      { label: 'Xfyun', value: 'xfyun', key: '2' },
-      { label: 'FunASR', value: 'funasr', key: '3' }
+      { label: 'Aliyun（DashScope）', value: 'aliyun', key: '1' },
+      { label: 'Aliyun（NLS标准版）', value: 'aliyun-nls', key: '2' },
+      { label: 'Xfyun', value: 'xfyun', key: '3' },
+      { label: 'FunASR', value: 'funasr', key: '4' }
     ],
     typeFields: {
       tencent: [
@@ -573,6 +574,33 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           required: true, 
           span: 12,
           help: '在 https://bailian.console.aliyun.com/?apiKey=1#/api-key 申请',
+          placeholder: 'your-app-key'
+        }
+      ],
+      'aliyun-nls': [
+        {
+          name: 'ak',
+          label: 'Access Key',
+          required: true,
+          span: 12,
+          help: '阿里云Access Key，在 https://ram.console.aliyun.com/profile/access-keys 申请',
+          placeholder: 'your-access-key'
+        },
+        {
+          name: 'sk',
+          label: 'Secret Key',
+          required: true,
+          inputType: 'password',
+          span: 12,
+          help: '阿里云Secret Key，对应Access Key的密钥',
+          placeholder: 'your-secret-key'
+        },
+        {
+          name: 'apiKey',
+          label: 'App Key',
+          required: true,
+          span: 12,
+          help: '阿里云智能语音交互App Key，在 https://nls-portal.console.aliyun.com/applist 申请',
           placeholder: 'your-app-key'
         }
       ],
@@ -619,9 +647,10 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
     label: 'config.tts',
     typeOptions: [
       { label: 'Aliyun', value: 'aliyun', key: '0' },
-      { label: 'Volcengine(doubao)', value: 'volcengine', key: '1' },
-      { label: 'Xfyun', value: 'xfyun', key: '2' },
-      { label: 'Minimax', value: 'minimax', key: '3' }
+      { label: 'Aliyun NLS', value: 'aliyun-nls', key: '1' },
+      { label: 'Volcengine(doubao)', value: 'volcengine', key: '2' },
+      { label: 'Xfyun', value: 'xfyun', key: '3' },
+      { label: 'Minimax', value: 'minimax', key: '4' }
     ],
     typeFields: {
       aliyun: [
@@ -632,6 +661,33 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           span: 12,
           help: '在 https://bailian.console.aliyun.com/?apiKey=1#/api-key 申请',
           placeholder: 'your-api-key'
+        }
+      ],
+      'aliyun-nls': [
+        {
+          name: 'ak',
+          label: 'Access Key',
+          required: true,
+          span: 12,
+          help: '阿里云Access Key，在 https://ram.console.aliyun.com/profile/access-keys 申请',
+          placeholder: 'your-access-key'
+        },
+        {
+          name: 'sk',
+          label: 'Secret Key',
+          required: true,
+          inputType: 'password',
+          span: 12,
+          help: '阿里云Secret Key，对应Access Key的密钥',
+          placeholder: 'your-secret-key'
+        },
+        {
+          name: 'apiKey',
+          label: 'App Key',
+          required: true,
+          span: 12,
+          help: '阿里云智能语音交互App Key，在 https://nls-portal.console.aliyun.com/applist 申请',
+          placeholder: 'your-app-key'
         }
       ],
       volcengine: [

@@ -41,27 +41,3 @@ export interface UpdateUserParams {
   avatar?: string // 头像字段
 }
 
-/**
- * 用户列表响应
- */
-export interface UserListResponse {
-  list: User[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
-}
-

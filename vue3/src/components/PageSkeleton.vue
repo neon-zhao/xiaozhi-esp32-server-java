@@ -22,7 +22,7 @@
 
 <style scoped lang="scss">
 .page-skeleton {
-  padding: 24px 0 0 0;
+  padding: 24px;
   max-width: 1600px;
   margin: 0 auto;
 }

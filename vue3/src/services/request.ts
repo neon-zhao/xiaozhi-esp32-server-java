@@ -2,62 +2,15 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { message } from 'ant-design-vue'
 import qs from 'qs'
 import { useUserStore } from '@/store/user'
-
-/**
- * API 响应基础接口
- */
-export interface ApiResponse<T = unknown> {
-  code: number
-  data: T
-  message: string
-  timestamp?: number
-  success?: boolean
-}
-
-/**
- * 分页数据接口
- */
-export interface PageData<T = unknown> {
-  list: T[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
-}
-
-/**
- * 分页响应接口
- */
-export interface PageResponse<T = unknown> extends ApiResponse<PageData<T>> {
-  data: PageData<T>
-}
-
-/**
- * 列表响应接口（不带分页）
- */
-export interface ListResponse<T = unknown> extends ApiResponse<T[]> {
-  data: T[]
-}
-
-/**
- * 通用响应接口（无数据）
- */
-export interface EmptyResponse extends ApiResponse<null> {
-  data: null
-}
+import type { 
+  ApiResponse, 
+  PageResponse, 
+  ListResponse, 
+  EmptyResponse, 
+  DataResponse,
+  PageQueryParams,
+  ListQueryParams
+} from '@/types/api'
 
 // 创建 axios 实例
 const request: AxiosInstance = axios.create({
@@ -174,37 +127,37 @@ export default request
  */
 export const http = {
   /**
-   * GET 请求
+   * GET 请求 - 通用数据响应
    */
-  get<T = unknown>(url: string, params?: any): Promise<ApiResponse<T>> {
+  get<T = unknown>(url: string, params?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.get(url, { params })
   },
 
   /**
-   * POST 请求（form-urlencoded）
+   * POST 请求（form-urlencoded）- 通用数据响应
    */
-  post<T = unknown>(url: string, data?: any): Promise<ApiResponse<T>> {
+  post<T = unknown>(url: string, data?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.post(url, data)
   },
 
   /**
-   * PUT 请求（form-urlencoded）
+   * PUT 请求（form-urlencoded）- 通用数据响应
    */
-  put<T = unknown>(url: string, data?: Record<string, unknown>): Promise<ApiResponse<T>> {
+  put<T = unknown>(url: string, data?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.put(url, data)
   },
 
   /**
-   * DELETE 请求
+   * DELETE 请求 - 通用数据响应
    */
-  delete<T = unknown>(url: string, params?: Record<string, unknown>): Promise<ApiResponse<T>> {
+  delete<T = unknown>(url: string, params?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.delete(url, { params })
   },
 
   /**
-   * POST 请求（JSON 格式）
+   * POST 请求（JSON 格式）- 通用数据响应
    */
-  postJSON<T = unknown>(url: string, data?: Record<string, unknown>): Promise<ApiResponse<T>> {
+  postJSON<T = unknown>(url: string, data?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.post(url, data, {
       headers: {
         'Content-Type': 'application/json;charset=UTF-8',
@@ -213,9 +166,9 @@ export const http = {
   },
 
   /**
-   * PUT 请求（JSON 格式）
+   * PUT 请求（JSON 格式）- 通用数据响应
    */
-  putJSON<T = unknown>(url: string, data?: Record<string, unknown>): Promise<ApiResponse<T>> {
+  putJSON<T = unknown>(url: string, data?: Record<string, unknown>): Promise<DataResponse<T>> {
     return request.put(url, data, {
       headers: {
         'Content-Type': 'application/json;charset=UTF-8',
@@ -224,19 +177,19 @@ export const http = {
   },
 
   /**
-   * 分页查询（GET）
+   * 分页查询（GET）- 自动推断为分页响应
    */
   getPage<T = unknown>(
     url: string,
-    params?: { start?: number; limit?: number } & Record<string, unknown>
+    params?: PageQueryParams
   ): Promise<PageResponse<T>> {
     return request.get(url, { params })
   },
 
   /**
-   * 列表查询（GET，不带分页）
+   * 列表查询（GET，不带分页）- 自动推断为列表响应
    */
-  getList<T = unknown>(url: string, params?: Record<string, unknown>): Promise<ListResponse<T>> {
+  getList<T = unknown>(url: string, params?: ListQueryParams): Promise<ListResponse<T>> {
     return request.get(url, { params })
   },
 }

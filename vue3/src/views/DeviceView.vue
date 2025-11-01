@@ -3,13 +3,17 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
 import { useTable } from '@/composables/useTable'
+import { useInlineEdit } from '@/composables/useInlineEdit'
+import { useLoadingStore } from '@/store/loading'
 import { queryDevices, addDevice, updateDevice, deleteDevice, clearDeviceMemory } from '@/services/device'
 import { queryRoles } from '@/services/role'
 import DeviceEditDialog from '@/components/DeviceEditDialog.vue'
+import TableActionButtons from '@/components/TableActionButtons.vue'
 import type { Device, DeviceQueryParams, Role } from '@/types/device'
 import type { TablePaginationConfig } from 'ant-design-vue'
 
 const { t } = useI18n()
+const loadingStore = useLoadingStore()
 
 // 表格和分页
 const {
@@ -34,22 +38,50 @@ const queryForm = reactive({
 const queryFilters = [
   { label: t('device.deviceId'), key: 'deviceId' as const, placeholder: t('device.deviceId') },
   { label: t('device.deviceName'), key: 'deviceName' as const, placeholder: t('device.deviceName') },
-  { label: t('device.roleName'), key: 'roleName' as const, placeholder: t('device.roleName') },
+  { label: t('role.roleName'), key: 'roleName' as const, placeholder: t('role.roleName') },
 ]
 
 // 设备状态选项
 const stateOptions = [
   { label: t('common.all'), value: '' },
   { label: t('device.onlineStatus'), value: '1' },
+  { label: t('device.standbyStatus'), value: '2' },
   { label: t('device.offlineStatus'), value: '0' },
 ]
 
 // 角色列表
 const roleItems = ref<Role[]>([])
 
-// 编辑相关
-const editingKey = ref('')
-const cacheData = ref<Device[]>([])
+// 使用行内编辑 composable
+const {
+  editingKey,
+  startEdit,
+  cancelEdit: cancelEditInline,
+  saveEdit,
+  updateField
+} = useInlineEdit(data, {
+  getKey: (item) => item.deviceId,
+  onSave: async (item) => {
+    loading.value = true
+    try {
+      const res = await updateDevice(item)
+      if (res.code === 200) {
+        message.success(t('common.updateSuccess'))
+        await fetchData()
+        return true
+      } else {
+        message.error(res.message || t('common.updateFailed'))
+        return false
+      }
+    } catch (error) {
+      console.error('更新设备失败:', error)
+      message.error(t('common.serverMaintenance'))
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+})
 
 // 弹窗相关
 const editVisible = ref(false)
@@ -76,7 +108,7 @@ const columns = computed(() => [
     align: 'center'
   },
   {
-    title: t('device.roleName'),
+    title: t('role.roleName'),
     dataIndex: 'roleName',
     width: 100,
     align: 'center'
@@ -94,7 +126,7 @@ const columns = computed(() => [
     align: 'center'
   },
   {
-      title: t('common.status'),
+    title: t('common.status'),
     dataIndex: 'state',
     width: 100,
     align: 'center',
@@ -111,24 +143,24 @@ const columns = computed(() => [
     width: 150,
     align: 'center'
   },
-    {
-      title: t('device.version'),
-      dataIndex: 'version',
-      width: 100,
-      align: 'center',
-    },
-    {
-      title: t('device.activeTime'),
-      dataIndex: 'lastLogin',
-      width: 180,
-      align: 'center',
-    },
-    {
-      title: t('common.createTime'),
-      dataIndex: 'createTime',
-      width: 180,
-      align: 'center',
-    },
+  {
+    title: t('device.version'),
+    dataIndex: 'version',
+    width: 100,
+    align: 'center',
+  },
+  {
+    title: t('device.activeTime'),
+    dataIndex: 'lastLogin',
+    width: 180,
+    align: 'center',
+  },
+  {
+    title: t('common.createTime'),
+    dataIndex: 'createTime',
+    width: 180,
+    align: 'center',
+  },
   {
     title: t('table.action'),
     dataIndex: 'operation',
@@ -140,6 +172,7 @@ const columns = computed(() => [
 
 // 获取设备数据
 async function fetchData() {
+  // 重置编辑状态
   editingKey.value = ''
   
   await loadData((params) => {
@@ -154,10 +187,6 @@ async function fetchData() {
     if (queryForm.state !== '') queryParams.state = queryForm.state
 
     return queryDevices(queryParams)
-  }, {
-    onSuccess: () => {
-      cacheData.value = data.value.map((item) => ({ ...item }))
-    }
   })
 }
 
@@ -177,7 +206,7 @@ async function getRoles() {
 }
 
 /**
- * 添加设备
+ * 添加设备（保留全局 loading）
  */
 async function handleAddDevice(code: string) {
   if (!code) {
@@ -196,87 +225,89 @@ async function handleAddDevice(code: string) {
   }
 
   addDeviceLoading.value = true
+  loadingStore.showLoading(t('common.adding'))
   try {
     const res = await addDevice(code)
     if (res.code === 200) {
-      message.success(t('message.prompt.addSuccess'))
+      message.success(t('common.addSuccess'))
       addDeviceCode.value = ''
-      fetchData()
+      await fetchData()
     } else {
-      message.error(res.message || t('message.prompt.addFailed'))
+      message.error(res.message || t('common.addFailed'))
     }
   } catch (error) {
     console.error('添加设备失败:', error)
-    message.error(t('message.prompt.serverMaintenance'))
+    message.error(t('common.serverMaintenance'))
   } finally {
     addDeviceLoading.value = false
+    loadingStore.hideLoading()
   }
 }
 
 /**
- * 删除设备
+ * 删除设备（快速操作，只用 table loading）
  */
 async function handleDeleteDevice(record: Device) {
   loading.value = true
   try {
     const res = await deleteDevice(record.deviceId)
     if (res.code === 200) {
-      message.success('设备删除成功')
-      fetchData()
+      message.success(t('common.deleteSuccess'))
+      await fetchData()
     } else {
-      message.error(res.message || '删除失败')
+      message.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     console.error('删除设备失败:', error)
-    message.error('服务器维护/重启中，请稍后再试')
+    message.error(t('common.serverMaintenance'))
   } finally {
     loading.value = false
   }
 }
 
 /**
- * 更新设备
+ * 更新设备（弹窗编辑后的更新，只用 table loading）
  */
 async function handleUpdate(device: Device) {
   loading.value = true
-  delete device.editable
-
   try {
     const res = await updateDevice(device)
     if (res.code === 200) {
-      message.success('修改成功')
+      message.success(t('common.updateSuccess'))
       editVisible.value = false
-      editingKey.value = ''
-      fetchData()
+      await fetchData()
     } else {
-      message.error(res.message || '修改失败')
+      message.error(res.message || t('common.updateFailed'))
     }
   } catch (error) {
     console.error('更新设备失败:', error)
-    message.error('服务器维护/重启中，请稍后再试')
+    message.error(t('common.serverMaintenance'))
   } finally {
     loading.value = false
   }
 }
 
 /**
- * 清除设备记忆
+ * 清除设备记忆（保留全局 loading）
  */
 async function handleClearMemory(device: Device) {
   clearMemoryLoading.value = true
+  loadingStore.showLoading(t('device.clearingMemory'))
   try {
     const res = await clearDeviceMemory(device.deviceId)
     if (res.code === 200) {
-      message.success('记忆清除成功')
+      message.success(t('common.deleteSuccess'))
       editVisible.value = false
+      await fetchData()
     } else {
-      message.error(res.message || '清除失败')
+      message.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     console.error('清除记忆失败:', error)
-    message.error('服务器维护/重启中，请稍后再试')
+    message.error(t('common.serverMaintenance'))
   } finally {
     clearMemoryLoading.value = false
+    loadingStore.hideLoading()
   }
 }
 
@@ -288,58 +319,27 @@ function handleEditWithDialog(record: Device) {
   editVisible.value = true
 }
 
-/**
- * 行内编辑
- */
-function handleEdit(key: string) {
-  // 取消其他行的编辑状态
-  data.value.forEach((item) => {
-    if (item.editable) {
-      delete item.editable
-    }
-  })
-
-  const target = data.value.find((item) => item.deviceId === key)
-  if (target) {
-    target.editable = true
-    editingKey.value = key
-  }
-}
+// 直接导出 composable 的方法，无需额外包装
+const handleEdit = startEdit
+const handleCancel = cancelEditInline
+const handleSave = saveEdit
 
 /**
- * 取消编辑
- */
-function handleCancel(key: string) {
-  const target = data.value.find((item) => item.deviceId === key)
-  const cache = cacheData.value.find((item) => item.deviceId === key)
-
-  if (target && cache) {
-    Object.assign(target, cache)
-    delete target.editable
-  }
-  editingKey.value = ''
-}
-
-/**
- * 输入编辑
+ * 输入编辑 - 使用 composable
  */
 function handleInputEdit(value: string, key: string, field: 'deviceName') {
-  const target = data.value.find((item) => item.deviceId === key)
-  if (target) {
-    target[field] = value
-  }
+  updateField(key, field, value)
 }
 
 /**
- * 角色选择变更
+ * 角色选择变更 - 使用 composable
  */
 function handleRoleChange(value: number, key: string) {
-  const target = data.value.find((item) => item.deviceId === key)
   const role = roleItems.value.find((item) => item.roleId === value)
-
-  if (target && role) {
-    target.roleId = value
-    target.roleName = role.roleName
+  
+  if (role) {
+    updateField(key, 'roleId', value)
+    updateField(key, 'roleName', role.roleName)
   }
 }
 
@@ -358,8 +358,9 @@ const onTableChange = (pag: TablePaginationConfig) => {
   fetchData()
 }
 
-await getRoles()
-await fetchData()
+// 初始化（非阻塞式加载）
+getRoles()
+fetchData()
 </script>
 
 <template>
@@ -530,8 +531,8 @@ await fetchData()
 
           <!-- 状态列 -->
           <template v-else-if="column.dataIndex === 'state'">
-            <a-tag :color="record.state == 1 ? 'green' : 'red'">
-              {{ record.state == 1 ? t('device.onlineStatus') : t('device.offlineStatus') }}
+            <a-tag :color="record.state == 1 ? 'green' : record.state == 2 ? 'blue' : 'red'">
+              {{ record.state == 1 ? t('device.onlineStatus') : record.state == 2 ? t('device.standbyStatus') : t('device.offlineStatus') }}
             </a-tag>
           </template>
 
@@ -548,18 +549,17 @@ await fetchData()
               </a-popconfirm>
               <a @click="() => handleCancel(record.deviceId)">{{ t('common.cancel') }}</a>
             </a-space>
-            <a-space v-else>
-              <a @click="() => handleEdit(record.deviceId)">{{ t('common.edit') }}</a>
-              <a @click="() => handleEditWithDialog(record)">{{ t('common.view') }}</a>
-              <a-popconfirm
-                :title="t('device.confirmDelete')"
-                :ok-text="t('common.confirm')"
-                :cancel-text="t('common.cancel')"
-                @confirm="() => handleDeleteDevice(record)"
-              >
-                <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
-              </a-popconfirm>
-            </a-space>
+            <TableActionButtons
+              v-else
+              :record="record"
+              show-edit
+              show-view
+              show-delete
+              :delete-title="t('device.confirmDelete')"
+              @edit="() => handleEdit(record.deviceId)"
+              @view="() => handleEditWithDialog(record)"
+              @delete="() => handleDeleteDevice(record)"
+            />
           </template>
         </template>
       </a-table>

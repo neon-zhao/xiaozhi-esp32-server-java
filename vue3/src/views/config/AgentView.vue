@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { message } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import type { TableColumnsType, FormInstance, TablePaginationConfig } from 'ant-design-vue'
 import { SettingOutlined } from '@ant-design/icons-vue'
 import { useTable } from '@/composables/useTable'
+import { useModal } from '@/composables/useModal'
 import { useConfigManager } from '@/composables/useConfigManager'
-import { queryAgents, updatePlatformConfig, queryPlatformConfig, addPlatformConfig } from '@/services/agent'
+import { useLoadingStore } from '@/store/loading'
+import TableActionButtons from '@/components/TableActionButtons.vue'
+import { updatePlatformConfig, queryPlatformConfig, addPlatformConfig } from '@/services/config'
 import type { Agent, PlatformConfig, ProviderOption, PlatformFormItems } from '@/types/agent'
+import { queryAgents } from '@/services/agent'
 
 const { t } = useI18n()
+const loadingStore = useLoadingStore()
 
 // ==================== 配置管理 ====================
 const { setAsDefault } = useConfigManager('llm')
@@ -59,7 +64,7 @@ const baseColumns = computed<TableColumnsType>(() => [
   {
     title: t('common.isDefault'),
     dataIndex: 'isDefault',
-    width: 80,
+    width: 120,
     align: 'center'
   },
   {
@@ -115,14 +120,11 @@ const onTableChange = (pag: TablePaginationConfig) => {
 }
 
 // ==================== 平台配置 ====================
-const platformModalVisible = ref(false)
-const platformModalLoading = ref(false)
-const isEdit = ref(false)
 const currentConfigId = ref<number | null>(null)
 const platformFormRef = ref<FormInstance>()
 
-// 平台表单
-const platformForm = ref<PlatformConfig>({
+// 平台表单数据
+const platformForm = reactive<PlatformConfig>({
   configType: 'agent',
   provider: 'coze',
   configName: '',
@@ -133,6 +135,103 @@ const platformForm = ref<PlatformConfig>({
   apiUrl: '',
   ak: '',
   sk: ''
+})
+
+// 使用 modal composable
+const platformModal = useModal<PlatformConfig>({
+  formRef: platformFormRef,
+  onSubmit: async (data, isEdit) => {
+    // Modal 内已有 submitLoading，不需要全局 loading
+    try {
+      // 如果是Dify平台，确保apiUrl有正确的格式
+      if (data.provider === 'dify' && data.apiUrl) {
+        let baseUrl = data.apiUrl
+        if (baseUrl.endsWith('/')) {
+          baseUrl = baseUrl.slice(0, -1)
+        }
+        data.apiUrl = baseUrl
+      }
+      
+      // 如果是编辑模式，添加configId
+      if (isEdit && currentConfigId.value) {
+        data.configId = currentConfigId.value
+      }
+      
+      // 调用API
+      const apiFunc = isEdit ? updatePlatformConfig : addPlatformConfig
+      const res = await apiFunc(data)
+      
+      if (res.code === 200) {
+        message.success(isEdit ? t('common.updatePlatformConfigSuccess') : t('common.addPlatformConfigSuccess'))
+        await fetchData()
+        return true
+      } else {
+        message.error(res.message || (isEdit ? t('common.updatePlatformConfigFailed') : t('common.addPlatformConfigFailed')))
+        return false
+      }
+    } catch (error) {
+      console.error('Error with platform config:', error)
+      message.error(isEdit ? t('common.updatePlatformConfigFailed') : t('common.addPlatformConfigFailed'))
+      return false
+    }
+  },
+  onOpen: async (item) => {
+    loadingStore.showLoading(t('common.loading'))
+    try {
+      // 并行执行：API 请求和等待最小显示时间
+      const [res] = await Promise.all([
+        queryPlatformConfig('agent', searchForm.value.provider),
+        loadingStore.awaitMinDisplay()
+      ])
+      
+      // 此时最小时间已满足，立即处理数据
+      if (res.code === 200) {
+        const configs = (res.data as { list: PlatformConfig[] })?.list || []
+        
+        if (configs.length > 0) {
+          // 编辑模式：填充已有配置
+          const config = configs[0] as PlatformConfig
+          currentConfigId.value = config.configId ?? null
+          Object.assign(platformForm, {
+            configType: config.configType || 'agent',
+            provider: config.provider,
+            configName: config.configName || '',
+            configDesc: config.configDesc || '',
+            appId: config.appId || '',
+            apiSecret: config.apiSecret || '',
+            apiKey: config.apiKey || '',
+            apiUrl: config.apiUrl || '',
+            ak: config.ak || '',
+            sk: config.sk || ''
+          })
+        } else {
+          // 新增模式：使用默认值
+          currentConfigId.value = null
+          Object.assign(platformForm, {
+            configType: 'agent',
+            provider: searchForm.value.provider,
+            configName: '',
+            configDesc: '',
+            appId: '',
+            apiKey: '',
+            apiSecret: '',
+            apiUrl: searchForm.value.provider === 'dify' ? 'https://api.dify.ai/v1' : '',
+            ak: '',
+            sk: ''
+          })
+        }
+      } else {
+        message.error(res.message || t('common.getPlatformConfigFailed'))
+      }
+    } catch (error) {
+      // 出错时也要等待最小时间，避免闪烁
+      await loadingStore.awaitMinDisplay()
+      console.error('Error fetching platform config:', error)
+      message.error(t('common.getPlatformConfigFailed'))
+    } finally {
+      loadingStore.hideLoading()
+    }
+  }
 })
 
 // 表单项配置
@@ -156,7 +255,8 @@ const formItems = computed<PlatformFormItems>(() => ({
     {
       field: 'sk',
       label: t('agent.privateKey'),
-      placeholder: t('agent.enterPrivateKey')
+      placeholder: t('agent.enterPrivateKey'),
+      type: 'textarea'
     }
   ],
   dify: [
@@ -197,121 +297,18 @@ const platformModalTitle = computed(() => {
 
 // 打开平台配置对话框
 const handleConfigPlatform = async () => {
-  try {
-    platformModalLoading.value = true
-    
-    const res = await queryPlatformConfig('agent', searchForm.value.provider)
-    
-    if (res.code === 200) {
-      const configs = (res.data as { list: PlatformConfig[] })?.list || []
-      
-      // 重置表单
-      platformForm.value = {
-        configType: 'agent',
-        provider: searchForm.value.provider,
-        configName: '',
-        configDesc: '',
-        appId: '',
-        apiKey: '',
-        apiSecret: '',
-        apiUrl: '',
-        ak: '',
-        sk: ''
-      }
-      
-      // 如果存在配置，则填充表单
-      if (configs.length > 0) {
-        const config = configs[0] as PlatformConfig
-        isEdit.value = true
-        currentConfigId.value = config.configId ?? null
-
-        // 填充表单数据
-        platformForm.value = {
-          configType: config.configType || 'agent',
-          provider: config.provider,
-          configName: config.configName || '',
-          configDesc: config.configDesc || '',
-          appId: config.appId || '',
-          apiSecret: config.apiSecret || '',
-          apiKey: config.apiKey || '',
-          apiUrl: config.apiUrl || '',
-          ak: config.ak || '',
-          sk: config.sk || ''
-        }
-      } else {
-        // 不存在配置，则为添加模式
-        isEdit.value = false
-        currentConfigId.value = null
-        
-        // 如果是Dify平台，设置默认的apiUrl
-        if (searchForm.value.provider === 'dify') {
-          platformForm.value.apiUrl = 'https://api.dify.ai/v1'
-        }
-      }
-      
-      platformModalVisible.value = true
-    } else {
-      message.error(res.message || t('common.getPlatformConfigFailed'))
-    }
-  } catch (error) {
-    console.error('Error fetching platform config:', error)
-    message.error(t('common.getPlatformConfigFailed'))
-  } finally {
-    platformModalLoading.value = false
-  }
+  await platformModal.openCreate()
 }
 
-// 平台配置确认
+// 平台配置提交
 const handlePlatformModalOk = async () => {
   try {
     await platformFormRef.value?.validate()
-    
-    platformModalLoading.value = true
-    
-    // 如果是Dify平台，确保apiUrl有正确的格式
-    if (platformForm.value.provider === 'dify' && platformForm.value.apiUrl) {
-      let baseUrl = platformForm.value.apiUrl
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1)
-      }
-      platformForm.value.apiUrl = baseUrl
-    }
-    
-    // 如果是编辑模式，添加configId
-    if (isEdit.value && currentConfigId.value) {
-      platformForm.value.configId = currentConfigId.value
-    }
-    
-    // 调用API
-    const apiFunc = isEdit.value ? updatePlatformConfig : addPlatformConfig
-    const res = await apiFunc(platformForm.value)
-    
-    if (res.code === 200) {
-      message.success(isEdit.value ? t('common.updatePlatformConfigSuccess') : t('common.addPlatformConfigSuccess'))
-      platformModalVisible.value = false
-      
-      // 刷新列表
-      fetchData()
-    } else {
-      message.error(res.message || (isEdit.value ? t('common.updatePlatformConfigFailed') : t('common.addPlatformConfigFailed')))
-    }
-  } catch (error: unknown) {
-    // 表单验证失败或API调用失败
-    if (error && typeof error === 'object' && 'errorFields' in error) {
-      // 表单验证错误，不显示错误消息
-      return
-    }
-    console.error('Error with platform config:', error)
-    message.error(isEdit.value ? t('common.updatePlatformConfigFailed') : t('common.addPlatformConfigFailed'))
-  } finally {
-    platformModalLoading.value = false
+    await platformModal.submit(platformForm)
+  } catch (error) {
+    // 表单验证失败，不执行任何操作
+    console.error('表单验证失败:', error)
   }
-}
-
-// 平台配置取消
-const handlePlatformModalCancel = () => {
-  platformModalVisible.value = false
-  platformFormRef.value?.resetFields()
 }
 
 // ==================== 设为默认 ====================
@@ -327,11 +324,11 @@ const handleSetDefault = async (record: Agent) => {
   
   await setAsDefault(configRecord)
   // 刷新数据
-  fetchData()
+  await fetchData()
 }
 
-// ==================== 初始化 ====================
-await fetchData()
+// ==================== 初始化（非阻塞式加载）====================
+fetchData()
 </script>
 
 <template>
@@ -419,15 +416,12 @@ await fetchData()
 
           <!-- 操作 -->
           <template v-else-if="column.key === 'operation'">
-            <a-space>
-              <a
-                v-if="record.isDefault != 1"
-                href="javascript:;"
-                @click="handleSetDefault(record)"
-              >
-                {{ t('common.setAsDefault') }}
-              </a>
-            </a-space>
+            <TableActionButtons
+              :record="record"
+              show-set-default
+              :is-default="record.isDefault == 1"
+              @set-default="handleSetDefault"
+            />
           </template>
         </template>
       </a-table>
@@ -436,10 +430,10 @@ await fetchData()
     <!-- 平台配置对话框 -->
     <a-modal
       :title="platformModalTitle"
-      :open="platformModalVisible"
-      :confirm-loading="platformModalLoading"
+      :open="platformModal.visible.value"
+      :confirm-loading="platformModal.submitLoading.value"
       @ok="handlePlatformModalOk"
-      @cancel="handlePlatformModalCancel"
+      @cancel="platformModal.close"
       :width="600"
     >
       <a-form
@@ -455,9 +449,20 @@ await fetchData()
           :label="item.label"
           :name="item.field"
         >
-          <a-input v-model:value="platformForm[item.field as keyof PlatformConfig] as string" :placeholder="item.placeholder">
+          <a-textarea
+            v-if="item.type === 'textarea'"
+            v-model:value="platformForm[item.field as keyof PlatformConfig] as string"
+            :placeholder="item.placeholder"
+            :rows="4"
+            :auto-size="{ minRows: 4, maxRows: 8 }"
+          />
+          <a-input
+            v-else
+            v-model:value="platformForm[item.field as keyof PlatformConfig] as string"
+            :placeholder="item.placeholder"
+          >
             <template v-if="item.suffix" #suffix>
-              <span style="color: #999">{{ item.suffix }}</span>
+              <span style="color: var(--ant-color-text-tertiary)">{{ item.suffix }}</span>
             </template>
           </a-input>
         </a-form-item>

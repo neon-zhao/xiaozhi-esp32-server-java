@@ -36,16 +36,38 @@ export default {
     upload: 'Upload',
     view: 'View',
     copy: 'Copy',
+    more: 'More',
+    copySuccess: 'Copy successful',
+    copyFailed: 'Copy failed',
     clear: 'Clear',
     filter: 'Filter',
     sort: 'Sort',
     pleaseSelect: 'Please select',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    pleaseSelectData: 'Please select data',
     confirmSave: 'Confirm save?',
+    confirmDelete: 'Confirm delete?',
+    confirmDeleteMessage: 'This operation cannot be undone. Are you sure?',
+    confirmBatchDelete: 'Confirm Batch Delete',
+    confirmBatchDeleteMessage: 'Are you sure you want to delete the selected {count} records? This action cannot be undone!',
+    batchDeleteSuccess: 'Successfully deleted {count} records',
+    batchDeleteFailed: 'Failed to delete {count} records',
+    confirmOperation: 'Are you sure you want to perform this operation?',
+    confirmCancel: 'Confirm cancel?',
+    confirmCancelMessage: 'Unsaved changes will be lost',
+    confirmSubmit: 'Confirm submit?',
+    confirmSubmitMessage: 'You will not be able to modify after submission',
     setAsDefault: 'Set as Default',
     user: 'User',
     personalCenter: 'Account',
     personalSettings: 'Settings',
     logout: 'Logout',
+    warningMessage: 'Please note the related risks',
+    infoMessage: 'Operation tips',
+    successMessage: 'Operation successful',
+    errorMessage: 'Operation failed',
+    loadDataFailed: 'Failed to load data',
     // Common fields
     avatar: 'Avatar',
     name: 'Name',
@@ -75,6 +97,27 @@ export default {
     setDefaultSuccess: 'Set "{name}" as default {type}',
     setDefaultFailed: 'Failed to set default {type}',
     operationFailed: 'Operation failed',
+    unknownError: 'Unknown error',
+    // Common operation result messages
+    exportSuccess: 'Export successful',
+    exportFailed: 'Export failed',
+    deleteSuccess: 'Delete successful',
+    deleteFailed: 'Delete failed',
+    saveSuccess: 'Save successful',
+    saveFailed: 'Save failed',
+    updateSuccess: 'Update successful',
+    updateFailed: 'Update failed',
+    addSuccess: 'Add successful',
+    addFailed: 'Add failed',
+    createSuccess: 'Create successful',
+    createFailed: 'Create failed',
+    // Common in-progress states
+    exporting: 'Exporting...',
+    deleting: 'Deleting...',
+    saving: 'Saving...',
+    updating: 'Updating...',
+    adding: 'Adding...',
+    serverMaintenance: 'Server maintenance/restart in progress, please try again later',
     // Common placeholders
     enterUsername: 'Please enter username',
     enterEmail: 'Please enter email',
@@ -89,6 +132,52 @@ export default {
     addPlatformConfigSuccess: 'Platform configuration added successfully',
     updatePlatformConfigFailed: 'Failed to update platform configuration',
     addPlatformConfigFailed: 'Failed to add platform configuration',
+    // Audio related
+    audioUrlInvalid: 'Audio URL invalid',
+    audioPlayFailed: 'Audio playback failed',
+    audioPathInvalid: 'Audio path invalid',
+    audioTestFailed: 'Audio test failed',
+    audioGenerateFailed: 'Failed to generate audio',
+    audioNotGenerated: 'Audio not generated',
+    audioUploadFailed: 'Audio upload failed',
+    audioFormatError: 'Only WAV or MP3 format audio files can be uploaded',
+    audioSizeError: 'Audio file cannot exceed 10MB',
+    audioProcessFailed: 'Failed to process audio',
+  },
+
+  upload: {
+    selectFile: 'Select File',
+    uploading: 'Uploading...',
+    uploadSuccess: 'Upload successful',
+    uploadFailed: 'Upload failed',
+    fileTypeError: 'Invalid file type',
+    fileSizeError: 'File size exceeds limit',
+    avatarTypeError: 'Only image files are allowed',
+    avatarSizeError: 'Image size cannot exceed 2MB',
+    audioTypeError: 'Only .wav or .mp3 audio files are allowed',
+    audioSizeError: 'Audio file size cannot exceed 10MB',
+    invalidFileType: 'Unsupported file type: {types}',
+    fileTooLarge: 'File size cannot exceed {size}MB',
+    validationFailed: 'File validation failed',
+    noFilesToUpload: 'No files to upload',
+    success: 'Upload successful',
+    failed: 'Upload failed',
+  },
+  
+  export: {
+    noData: 'No data to export',
+    exporting: 'Exporting...',
+    success: 'Export successful',
+    failed: 'Export failed',
+  },
+  
+  clipboard: {
+    copySuccess: 'Copied successfully',
+    copyFailed: 'Copy failed',
+    pasteNotSupported: 'Your browser does not support reading clipboard',
+    pasteFailed: 'Failed to read clipboard',
+    jsonError: 'JSON serialization failed',
+    imageNotSupported: 'Your browser does not support copying images',
   },
 
   menu: {
@@ -103,6 +192,7 @@ export default {
     agent: 'Agent Management',
     sttConfig: 'STT Config',
     ttsConfig: 'TTS Config',
+    chat: 'Chat',
     setting: 'Settings',
     account: 'Account',
     personalConfig: 'Settings',
@@ -147,11 +237,15 @@ export default {
     sendVerificationCode: 'Send Verification Code',
     enterEmailFirst: 'Please enter email address first!',
     enterValidEmail: 'Please enter a valid email format!',
-    verificationCodeSent: 'Verification code has been sent to your email!',
+    verificationCodeSent: 'Verification code has been sent!',
     sendVerificationCodeFailed: 'Failed to send verification code!',
     sendVerificationCodeRetry: 'Failed to send verification code, please try again later',
     verificationSuccess: 'Verification successful!',
     verificationCodeError: 'Verification code error',
+    // Mobile phone login related
+    mobilePhone: 'Mobile Phone',
+    enterMobilePhone: 'Please enter phone number',
+    useAccountLogin: 'Use Account Login',
   },
 
   user: {
@@ -173,10 +267,15 @@ export default {
 
 
   device: {
+    online: 'Online',
+    standby: 'Standby',
+    offline: 'Offline',
+    unknown: 'Unknown',
     deviceId: 'Device ID',
     deviceName: 'Device Name',
     deviceType: 'Device Type',
     onlineStatus: 'Online',
+    standbyStatus: 'Standby',
     offlineStatus: 'Offline',
     lastOnlineTime: 'Last Online Time',
     owner: 'Owner',
@@ -189,7 +288,15 @@ export default {
     configureDefaultRole: 'Please configure default role first',
     version: 'Version',
     activeTime: 'Active Time',
-    // Role related
+    // Device details dialog related
+    deviceDetails: 'Device Details',
+    bindRole: 'Bind Role',
+    confirmClearMemory: 'Are you sure to clear all conversation memory for this device? This operation cannot be undone.',
+    clearMemory: 'Clear Memory',
+  },
+
+  role: {
+    // Role basic information
     roleName: 'Role Name',
     roleDesc: 'Role Description',
     voiceName: 'Voice',
@@ -202,6 +309,8 @@ export default {
     enterRoleName: 'Enter role name',
     setAsDefaultRole: 'Set as Default Role',
     defaultRoleTip: 'When set as default, this role will be used preferentially',
+    
+    // Conversation model settings
     conversationModelSettings: 'Conversation Model Settings',
     modelType: 'Model Type',
     llmModel: 'LLM Model',
@@ -213,6 +322,8 @@ export default {
     temperatureTip: 'Control answer creativity:\n- Low value (0.2): More precise and conservative\n- High value (0.8): More creative and diverse',
     topP: 'Top P',
     topPTip: 'Control vocabulary selection range:\n- Low value (0.5): More focused\n- High value (0.9): Consider more possibilities',
+    
+    // Speech recognition settings
     speechRecognitionSettings: 'Speech Recognition Settings',
     speechRecognition: 'Speech Recognition',
     selectSpeechRecognition: 'Please select speech recognition configuration',
@@ -221,16 +332,24 @@ export default {
     silenceThreshold: 'Silence Threshold',
     energyThreshold: 'Energy Threshold',
     silenceDuration: 'Silence Duration',
+    
+    // Voice synthesis settings
     voiceSynthesisSettings: 'Voice Synthesis Settings',
     selectVoice: 'Please select voice',
+    voiceType: 'Voice Type',
+    standardVoice: 'Standard',
+    
+    // Role prompt
     rolePrompt: 'Role Prompt',
     agentPrompt: 'Agent mode uses built-in prompts, no additional setup required',
-    agentPromptDesc: 'Agent includes preset prompts and knowledge base, will automatically use agent description as role prompt',
+    agentPromptDesc: 'Agent includes preset prompts, will automatically use agent description as role prompt',
     useTemplate: 'Use Template',
     custom: 'Custom',
     selectTemplate: 'Select Template',
     templateManagement: 'Template Management',
-    enterRolePrompt: 'Enter role prompt, describe character traits, knowledge background and behavior patterns',
+    enterRolePrompt: 'Enter role prompt, describe character traits and behavior patterns',
+    
+    // Operations
     cancel: 'Cancel',
     confirmDeleteRole: 'Are you sure to delete this role?',
     deleteRole: 'Delete Role',
@@ -242,16 +361,15 @@ export default {
     createRoleSuccess: 'Create successful',
     updateRoleSuccess: 'Update successful',
     checkForm: 'Please check if the form is filled correctly',
+    
+    // Voice test related
     voiceNotFound: 'Voice information not found',
-    audioUrlInvalid: 'Audio URL invalid',
-    audioPlayFailed: 'Audio playback failed',
     getTestAudioFailed: 'Failed to get test audio',
     playVoiceFailed: 'Voice playback failed',
     loadTemplateFailed: 'Failed to load template list',
     voskLocalRecognition: 'Vosk Local Recognition',
-    unknown: 'Unknown',
     unknownModel: 'Unknown Model',
-    voiceTestMessage: 'Hello, I am your voice assistant, I am very happy to serve you',
+    voiceTestMessage: 'Hello, I am your voice assistant, I am very happy to serve you'
   },
 
   template: {
@@ -275,7 +393,7 @@ export default {
     enterCustomCategory: 'Please enter custom category name',
     enterTemplateDesc: 'Please enter template description',
     enterTemplateContent: 'Please enter template content',
-    templateContentPlaceholder: 'Please enter template content, describing the character\'s characteristics, knowledge background and behavior',
+    templateContentPlaceholder: 'Please enter template content, describing the character\'s characteristics and behavior',
     defaultTip: 'When set as default, this template will be displayed first',
     categoryBasic: 'Basic Role',
     categoryProfessional: 'Professional Role',
@@ -333,9 +451,9 @@ export default {
     assistant: 'Assistant',
     system: 'System',
     // Message page specific
-    messageSender: 'Message Sender',
+    messageSender: 'Sender',
     messageContent: 'Message Content',
-    voice: 'Voice',
+    voice: 'Audio',
     conversationTime: 'Conversation Time',
     conversationDate: 'Conversation Date',
     queryTable: 'Query Table',
@@ -343,25 +461,6 @@ export default {
     confirmDeleteMessage: 'Are you sure to delete this message?',
     today: 'Today',
     thisMonth: 'This Month',
-    prompt: {
-      exportSuccess: 'Export successful',
-      exportFailed: 'Export failed',
-      deleteSuccess: 'Delete successful',
-      deleteFailed: 'Delete failed',
-      saveSuccess: 'Save successful',
-      saveFailed: 'Save failed',
-      updateSuccess: 'Update successful',
-      updateFailed: 'Update failed',
-      addSuccess: 'Add successful',
-      addFailed: 'Add failed',
-      loading: 'Loading...',
-      exporting: 'Exporting data...',
-      deleting: 'Deleting...',
-      saving: 'Saving...',
-      updating: 'Updating...',
-      adding: 'Adding...',
-      serverMaintenance: 'Server maintenance/restarting, please try again later',
-    },
   },
 
     agent: {
@@ -488,6 +587,7 @@ export default {
   table: {
     index: 'Index',
     action: 'Action',
+    uploadTime: 'Upload Time',
     total: 'Total {total} items',
     noData: 'No data',
   },
@@ -529,6 +629,7 @@ export default {
       agent: 'Agent Management',
       sttConfig: 'STT Configuration',
       ttsConfig: 'TTS Configuration',
+      chat: 'Chat',
       account: 'Account',
       personalConfig: 'Settings',
       error403: '403 - Forbidden',
@@ -604,5 +705,5 @@ export default {
     },
 
   },
-}
 
+}

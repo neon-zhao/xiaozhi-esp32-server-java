@@ -34,20 +34,31 @@ const stopAllAudioBus = useEventBus<void>('stop-all-audio')
  * 初始化 WaveSurfer
  */
 function initWaveSurfer() {
-  if (!waveformRef.value) return
+  if (!waveformRef.value) {
+    console.error('WaveSurfer 容器未找到')
+    return
+  }
 
-  // 创建 wavesurfer 实例
-  wavesurfer.value = WaveSurfer.create({
-    container: waveformRef.value,
-    waveColor: '#ddd',
-    progressColor: '#1890ff',
-    cursorColor: 'transparent',
-    barWidth: 2,
-    barRadius: 2,
-    barGap: 1,
-    height: 40,
-    normalize: true,
-  })
+  try {
+    // 创建 wavesurfer 实例
+    wavesurfer.value = WaveSurfer.create({
+      container: waveformRef.value,
+      waveColor: 'var(--ant-color-border)',
+      progressColor: 'var(--ant-color-primary)',
+      cursorColor: 'transparent',
+      barWidth: 2,
+      barRadius: 2,
+      barGap: 1,
+      height: 40,
+      normalize: true,
+    })
+  } catch (error) {
+    console.error('WaveSurfer 初始化失败:', error)
+    loading.value = false
+    loadError.value = true
+    emit('audioLoadError')
+    return
+  }
 
   // 事件监听
   wavesurfer.value.on('ready', () => {
@@ -75,8 +86,7 @@ function initWaveSurfer() {
     }
   })
 
-  wavesurfer.value.on('error', (error) => {
-    console.debug('音频加载失败:', props.audioUrl, error)
+  wavesurfer.value.on('error', () => {
     loading.value = false
     loadError.value = true
     emit('audioLoadError')
@@ -92,17 +102,39 @@ function initWaveSurfer() {
  * 加载音频
  */
 function loadAudio(url: string) {
-  if (!url || !wavesurfer.value) return
+  if (!url) {
+    return
+  }
+  
+  if (!wavesurfer.value) {
+    loadError.value = true
+    emit('audioLoadError')
+    return
+  }
 
-  // 检查是否为 Blob URL 或 Data URL
-  if (url.startsWith('blob:') || url.startsWith('data:')) {
-    wavesurfer.value.load(url)
-  } else {
-    // 使用统一的资源 URL 处理函数
-    const audioUrl = getResourceUrl(url)
-    if (audioUrl) {
-      wavesurfer.value.load(audioUrl)
+  loading.value = true
+  loadError.value = false
+
+  try {
+    // 检查是否为 Blob URL 或 Data URL
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      // 对于 blob URL，直接加载
+      wavesurfer.value.load(url)
+    } else {
+      // 使用统一的资源 URL 处理函数
+      const audioUrl = getResourceUrl(url)
+      if (audioUrl) {
+        wavesurfer.value.load(audioUrl)
+      } else {
+        loading.value = false
+        loadError.value = true
+        emit('audioLoadError')
+      }
     }
+  } catch (error) {
+    loading.value = false
+    loadError.value = true
+    emit('audioLoadError')
   }
 }
 
@@ -136,6 +168,9 @@ watch(
       loading.value = true
       loadError.value = false
       loadAudio(newUrl)
+    } else if (!wavesurfer.value && newUrl) {
+      loadError.value = true
+      emit('audioLoadError')
     }
   },
 )
@@ -158,7 +193,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div v-if="loadError" class="audio-error">
-    <span style="color: #999">音频加载失败</span>
+    <span style="color: var(--ant-color-text-tertiary)">音频加载失败</span>
   </div>
   <div v-else class="audio-player-container">
     <div class="player-controls">

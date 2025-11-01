@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { message as antMessage } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
-import type { FormInstance } from 'ant-design-vue'
+import type { FormInstance, TableColumnsType } from 'ant-design-vue'
 import { useConfigManager } from '@/composables/useConfigManager'
+import TableActionButtons from '@/components/TableActionButtons.vue'
 import type { ConfigType, Config, ConfigField, ModelType } from '@/types/config'
 import { addConfig, updateConfig } from '@/services/config'
 
@@ -28,7 +29,7 @@ const {
   configTypeInfo,
   typeOptions,
   currentTypeFields,
-  getData,
+  fetchData,
   deleteConfig,
   setAsDefault,
   updateModelOptions,
@@ -53,11 +54,11 @@ const formData = ref<Partial<Config>>({
 
 // 表格列配置
 const columns = computed(() => {
-  const baseColumns = [
+  const baseColumns: TableColumnsType = [
     {
       title: t('config.category'),
       dataIndex: 'provider',
-      width: 200,
+      width: 150,
       align: 'center',
       customRender: ({ text }: { text: string }) => {
         const provider = typeOptions.value.find((item) => item.value === text)
@@ -92,27 +93,29 @@ const columns = computed(() => {
     {
       title: t('common.isDefault'),
       dataIndex: 'isDefault',
-      width: 80,
+      width: 120,
       align: 'center' as const,
     },
     {
       title: t('common.createTime'),
       dataIndex: 'createTime',
-      width: 180,
+      width: 150,
       align: 'center' as const,
     },
     {
       title: t('table.action'),
       dataIndex: 'operation',
       width: 180,
-      align: 'center',
-      fixed: 'right',
-    } as any,
+      align: 'center' as const,
+      fixed: 'right' as const,
+    }
   )
 
   // TTS 过滤掉默认列
   if (props.configType === 'tts') {
-    return baseColumns.filter((col) => col.dataIndex !== 'isDefault')
+    return baseColumns.filter((col) => {
+      return 'dataIndex' in col && col.dataIndex !== 'isDefault'
+    })
   }
 
   return baseColumns
@@ -155,7 +158,7 @@ function handleModelTypeChange(value: string) {
 function handleTabChange(key: string) {
   activeTabKey.value = key
   if (key === '1') {
-    getData()
+    fetchData()
   } else if (key === '2') {
     resetForm()
   }
@@ -231,7 +234,7 @@ async function handleSubmit() {
     if (res.code === 200) {
       antMessage.success(editingConfigId.value ? t('config.updateSuccess') : t('config.createSuccess'))
       resetForm()
-      getData()
+      fetchData()
       activeTabKey.value = '1'
     } else {
       antMessage.error(res.message || t('common.operationFailed'))
@@ -328,13 +331,11 @@ function getModelTypeTag(modelType: string) {
 const handleTableChangeWrapper = (pag: any) => {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
-  getData()
+  fetchData()
 }
 
 // 初始化
-onMounted(() => {
-  getData()
-})
+fetchData()
 </script>
 
 <template>
@@ -345,7 +346,7 @@ onMounted(() => {
         <a-row :gutter="16">
           <a-col :xxl="8" :xl="8" :lg="12" :xs="24">
             <a-form-item :label="t('config.category')">
-              <a-select v-model:value="queryForm.provider" @change="getData">
+              <a-select v-model:value="queryForm.provider" @change="fetchData">
                 <a-select-option value="">{{ t('common.all') }}</a-select-option>
                 <a-select-option
                   v-for="item in typeOptions"
@@ -364,14 +365,14 @@ onMounted(() => {
                 v-model:value="queryForm.configName"
                 :placeholder="t('config.pleaseEnter')"
                 allow-clear
-                @press-enter="getData"
+                @press-enter="fetchData"
               />
             </a-form-item>
           </a-col>
 
           <a-col v-if="configType === 'llm'" :xxl="8" :xl="8" :lg="12" :xs="24">
             <a-form-item :label="t('config.modelType')">
-              <a-select v-model:value="queryForm.modelType" @change="getData">
+              <a-select v-model:value="queryForm.modelType" @change="fetchData">
                 <a-select-option value="">{{ t('common.all') }}</a-select-option>
                 <a-select-option value="chat">{{ t('config.chatModel') }}</a-select-option>
                 <a-select-option value="vision">{{ t('config.visionModel') }}</a-select-option>
@@ -428,21 +429,17 @@ onMounted(() => {
 
               <!-- 操作列 -->
               <template v-else-if="column.dataIndex === 'operation'">
-                <a-space>
-                  <a @click="() => handleEdit(record)">{{ t('common.edit') }}</a>
-                  <a
-                    v-if="configType !== 'tts' && record.isDefault !== '1'"
-                    @click="() => setAsDefault(record)"
-                  >
-                    {{ t('common.setAsDefault') }}
-                  </a>
-                  <a-popconfirm
-                    :title="t('config.confirmDelete', { type: t(configTypeInfo.label) })"
-                    @confirm="() => deleteConfig(record.configId)"
-                  >
-                    <a v-if="record.isDefault !== '1'" style="color: #ff4d4f">{{ t('common.delete') }}</a>
-                  </a-popconfirm>
-                </a-space>
+                <TableActionButtons
+                  :record="record"
+                  show-edit
+                  :show-set-default="configType !== 'tts'"
+                  :show-delete="record.isDefault !== '1'"
+                  :is-default="record.isDefault === '1'"
+                  :delete-title="t('config.confirmDelete', { type: t(configTypeInfo.label) })"
+                  @edit="handleEdit"
+                  @set-default="setAsDefault"
+                  @delete="() => deleteConfig(record.configId)"
+                />
               </template>
             </template>
           </a-table>
@@ -545,7 +542,7 @@ onMounted(() => {
               name="isDefault"
             >
               <a-switch v-model:checked="formData.isDefault" />
-              <span style="margin-left: 8px; color: #999">
+              <span style="margin-left: 8px; color: var(--ant-color-text-tertiary)">
                 {{ t('config.defaultTip') }}
               </span>
             </a-form-item>
@@ -578,7 +575,7 @@ onMounted(() => {
                       :type="field.inputType || 'text'"
                     >
                       <template v-if="field.suffix" #suffix>
-                        <span style="color: #999">{{ field.suffix }}</span>
+                        <span style="color: var(--ant-color-text-tertiary)">{{ field.suffix }}</span>
                       </template>
                     </a-input>
                     <div v-if="field.help" class="field-help">

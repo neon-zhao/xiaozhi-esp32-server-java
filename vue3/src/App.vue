@@ -1,12 +1,25 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import { useLocale } from './composables/useLocale'
 import { useAntdTheme } from './composables/useAntdTheme'
+import { useAppStore } from './store/app'
 
 const { antdLocale } = useLocale()
 const { antdTheme } = useAntdTheme()
+const appStore = useAppStore()
+
+// 初始化和监听窗口大小变化
+onMounted(() => {
+  appStore.updateScreenSize()
+  window.addEventListener('resize', appStore.updateScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', appStore.updateScreenSize)
+})
 </script>
 
 <template>

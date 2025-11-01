@@ -6,7 +6,7 @@
 export type ModelType = 'llm' | 'agent'
 
 // 语音提供商类型
-export type VoiceProvider = 'edge' | 'aliyun' | 'volcengine' | 'xfyun' | 'minimax'
+export type VoiceProvider = 'edge' | 'aliyun' | 'aliyun-nls' | 'volcengine' | 'xfyun' | 'minimax'
 
 // 语音性别
 export type VoiceGender = '' | 'male' | 'female'
@@ -36,39 +36,19 @@ export interface Role {
   vadSilenceMs?: number
   modelProvider?: string
   ttsProvider?: string
-  isDefault?: string
+  isDefault?: string | number // 服务器返回字符串 '1' 或 '0'，前端可能转为数字
   totalDevice?: number
 }
 
+import type { BaseQueryParams } from './api'
+
 // 角色查询参数
-export interface RoleQueryParams {
-  start?: number
-  limit?: number
+export interface RoleQueryParams extends BaseQueryParams {
   roleName?: string
   isDefault?: number
 }
 
-// 角色列表响应
-export interface RoleListResponse {
-  list: Role[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
-}
+// 移除重复的响应类型定义，使用统一的 PageResponse<Role>
 
 // 语音选项
 export interface VoiceOption {
@@ -114,7 +94,7 @@ export interface RoleFormData {
   roleName: string
   roleDesc?: string
   avatar?: string
-  isDefault: boolean | number // 支持布尔值和数字
+  isDefault: boolean | number | string // 支持布尔值、数字和字符串（提交时转为 '1' 或 '0'）
   state?: string
   // 模型相关
   modelType: ModelType
@@ -140,4 +120,3 @@ export interface TestVoiceParams {
   message: string
   provider: string
 }
-

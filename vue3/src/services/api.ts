@@ -2,10 +2,12 @@ export default {
   user: {
     add: '/user/add',
     login: '/user/login',
+    telLogin: '/user/tel-login',
     query: '/user/query',
     queryUsers: '/user/queryUsers',
     update: '/user/update',
     sendEmailCaptcha: '/user/sendEmailCaptcha',
+    sendSmsCaptcha: '/user/sendSmsCaptcha',
     checkCaptcha: '/user/checkCaptcha',
     checkUser: '/user/checkUser',
   },

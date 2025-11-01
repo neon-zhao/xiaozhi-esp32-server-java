@@ -75,7 +75,7 @@ const columns = computed(() => [
   {
     title: t('user.onlineDeviceCount'),
     dataIndex: 'aliveNumber',
-    width: 100,
+    width: 120,
     align: 'center',
   },
   {
@@ -99,7 +99,7 @@ const columns = computed(() => [
   {
     title: t('user.lastLoginTime'),
     dataIndex: 'loginTime',
-    width: 180,
+    width: 150,
     align: 'center',
   },
   {
@@ -132,15 +132,15 @@ const debouncedSearch = createDebouncedSearch(fetchData, 500)
 // 导出用户数据
 async function handleExport() {
   try {
-    loadingStore.showLoading(t('message.prompt.exporting'))
+    loadingStore.showLoading(t('common.exporting'))
     
     // TODO: 调用实际的导出接口
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    message.success(t('message.prompt.exportSuccess'))
+    message.success(t('common.exportSuccess'))
   } catch (error) {
     console.error('导出失败:', error)
-    message.error(t('message.prompt.exportFailed'))
+    message.error(t('common.exportFailed'))
   } finally {
     loadingStore.hideLoading()
   }
@@ -157,7 +157,8 @@ const onTableChange = (pag: TablePaginationConfig) => {
   fetchData()
 }
 
-await fetchData()
+// 初始化（非阻塞式加载）
+fetchData()
 </script>
 
 <template>

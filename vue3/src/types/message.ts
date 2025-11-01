@@ -18,40 +18,18 @@ export interface Message {
   audioLoadError?: boolean
 }
 
+import type { PageQueryParams } from './api'
+
 /**
  * 消息查询参数
  */
-export interface MessageQueryParams {
-  start: number
-  limit: number
+export interface MessageQueryParams extends PageQueryParams {
   deviceId?: string
   deviceName?: string
   sender?: string
   startTime?: string
   endTime?: string
+  // 重写 start 和 limit 为可选
+  start?: number
+  limit?: number
 }
-
-/**
- * 消息列表响应
- */
-export interface MessageListResponse {
-  list: Message[]
-  total: number
-  pageNum: number
-  pageSize: number
-  size: number
-  startRow: number
-  endRow: number
-  pages: number
-  prePage: number
-  nextPage: number
-  isFirstPage: boolean
-  isLastPage: boolean
-  hasPreviousPage: boolean
-  hasNextPage: boolean
-  navigatePages: number
-  navigatepageNums: number[]
-  navigateFirstPage: number
-  navigateLastPage: number
-}
-
