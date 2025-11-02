@@ -4,7 +4,7 @@ import { GithubOutlined, QqOutlined, CopyrightOutlined, WechatOutlined } from '@
 const currentYear = new Date().getFullYear()
 
 // 微信号或微信二维码链接
-const wechatQrCodeValue = 'https://weixin.qq.com/your-wechat-link' // 可以替换为你的微信号或链接
+const wechatQrCodeValue = '/public/static/img/wechat.jpg' // 可以替换为你的微信号或链接
 </script>
 
 <template>

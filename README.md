@@ -308,7 +308,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 我们接受各种项目开发，如果您有特定需求或对商业版本感兴趣，欢迎通过微信联系洽谈。
 
-<img src="./web/static/img/wechat.jpg" alt="微信" width="200" />
+<img src="./web/public/static/img/wechat.jpg" alt="微信" width="200" />
 
 ## 贡献指南 👐
 
@@ -324,7 +324,7 @@ Xiaozhi ESP32 Server Java 是基于 [Xiaozhi ESP32](https://github.com/78/xiaozh
 
 欢迎加入我们的QQ群一起交流讨论，QQ群号：790820705
 
-<img src="./web/static/img/qq.jpg" alt="QQ群" width="200" />
+<img src="./web/public/static/img/qq.jpg" alt="QQ群" width="200" />
 
 ---
 

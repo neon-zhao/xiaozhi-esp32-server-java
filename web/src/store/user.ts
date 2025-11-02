@@ -112,7 +112,7 @@ export const useUserStore = defineStore('user', () => {
 
   // WebSocket 配置管理
   const defaultWsConfig: WebSocketConfig = {
-    url: import.meta.env.VITE_WS_URL || 'wss://qiawanos.cn/ws/xiaozhi/v1',
+    url: import.meta.env.VITE_WS_URL || 'ws://localhost:8091/ws/xiaozhi/v1',
   }
   
   const wsConfig = useStorage<WebSocketConfig>(
