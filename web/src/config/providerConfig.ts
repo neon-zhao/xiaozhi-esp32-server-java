@@ -528,6 +528,521 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           suffix: '/chat/completions',
           help: '本地 LM Studio 服务地址'
         }
+      ],
+      // Moonshot (月之暗面)
+      'Moonshot': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://platform.moonshot.cn/console/api-keys 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.moonshot.cn/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Moonshot API 接口地址'
+        }
+      ],
+      // 硅基流动
+      'SILICONFLOW': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://cloud.siliconflow.cn/account/ak 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.siliconflow.cn/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '硅基流动 API 接口地址'
+        }
+      ],
+      // 腾讯混元
+      'Tencent Hunyuan': [
+        {
+          name: 'apiKey',
+          label: 'Secret Id',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-secret-id',
+          span: 12,
+          help: '在 https://console.cloud.tencent.com/cam/capi 申请腾讯云 API 密钥'
+        },
+        {
+          name: 'apiSecret',
+          label: 'Secret Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-secret-key',
+          span: 12,
+          help: '腾讯云 API Secret Key'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.hunyuan.cloud.tencent.com/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '腾讯混元大模型 API 接口地址'
+        }
+      ],
+      // 讯飞星火
+      'XunFei Spark': [
+        {
+          name: 'appId',
+          label: 'App Id',
+          required: true,
+          inputType: 'text',
+          placeholder: 'your-app-id',
+          span: 12,
+          help: '在 https://console.xfyun.cn/ 申请讯飞开放平台 AppID'
+        },
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '讯飞开放平台 API Key'
+        },
+        {
+          name: 'apiSecret',
+          label: 'API Secret',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-secret',
+          span: 12,
+          help: '讯飞开放平台 API Secret'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://spark-api.xf-yun.com/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '讯飞星火大模型 API 接口地址'
+        }
+      ],
+      // 百度文心一言
+      'BaiduYiyan': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application 申请千帆平台 API Key'
+        },
+        {
+          name: 'apiSecret',
+          label: 'Secret Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-secret-key',
+          span: 12,
+          help: '千帆平台 Secret Key'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1',
+          span: 12,
+          suffix: '/wenxinworkshop/chat/completions',
+          help: '百度千帆平台 API 接口地址'
+        }
+      ],
+      // HuggingFace
+      'HuggingFace': [
+        {
+          name: 'apiKey',
+          label: 'API Token',
+          required: true,
+          inputType: 'password',
+          placeholder: 'hf_...',
+          span: 12,
+          help: '在 https://huggingface.co/settings/tokens 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api-inference.huggingface.co/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'HuggingFace Inference API 地址'
+        }
+      ],
+      // Cohere
+      'Cohere': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://dashboard.cohere.com/api-keys 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.cohere.ai/v1',
+          span: 12,
+          suffix: '/chat',
+          help: 'Cohere API 接口地址'
+        }
+      ],
+      // TogetherAI
+      'TogetherAI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://api.together.xyz/settings/api-keys 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.together.xyz/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Together AI API 接口地址'
+        }
+      ],
+      // Replicate
+      'Replicate': [
+        {
+          name: 'apiKey',
+          label: 'API Token',
+          required: true,
+          inputType: 'password',
+          placeholder: 'r8_...',
+          span: 12,
+          help: '在 https://replicate.com/account/api-tokens 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.replicate.com/v1',
+          span: 12,
+          suffix: '/predictions',
+          help: 'Replicate API 接口地址'
+        }
+      ],
+      // 302.AI
+      '302.AI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://302.ai/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.302.ai/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '302.AI API 接口地址'
+        }
+      ],
+      // Fish Audio
+      'Fish Audio': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://fish.audio/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.fish.audio/v1',
+          span: 12,
+          suffix: '/tts',
+          help: 'Fish Audio API 接口地址'
+        }
+      ],
+      // PPIO
+      'PPIO': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://www.ppio.cloud/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.ppio.cloud/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'PPIO API 接口地址'
+        }
+      ],
+      // NovitaAI
+      'NovitaAI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://novita.ai/settings 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.novita.ai/v3',
+          span: 12,
+          suffix: '/openai/chat/completions',
+          help: 'NovitaAI API 接口地址'
+        }
+      ],
+      // GPUStack
+      'GPUStack': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: false,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '本地部署 GPUStack 的 API Key（可选）'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'http://localhost:80/v1-openai',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'GPUStack 服务地址'
+        }
+      ],
+      // Upstage
+      'Upstage': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://console.upstage.ai/api-keys 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.upstage.ai/v1/solar',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Upstage API 接口地址'
+        }
+      ],
+      // LeptonAI
+      'LeptonAI': [
+        {
+          name: 'apiKey',
+          label: 'API Token',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-token',
+          span: 12,
+          help: '在 https://dashboard.lepton.ai/ 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.lepton.ai/api/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Lepton AI API 接口地址'
+        }
+      ],
+      // PerfXCloud
+      'PerfXCloud': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://cloud.perfxlab.cn/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://cloud.perfxlab.cn/api/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'PerfXCloud API 接口地址'
+        }
+      ],
+      // Google Cloud
+      'Google Cloud': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://console.cloud.google.com/apis/credentials 申请'
+        },
+        {
+          name: 'projectId',
+          label: 'Project ID',
+          required: true,
+          inputType: 'text',
+          placeholder: 'your-project-id',
+          span: 12,
+          help: 'Google Cloud 项目 ID'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://generativelanguage.googleapis.com/v1',
+          span: 12,
+          suffix: '/models',
+          help: 'Google Cloud Vertex AI API 地址'
+        }
+      ],
+      // Bedrock (AWS)
+      'Bedrock': [
+        {
+          name: 'apiKey',
+          label: 'Access Key ID',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-access-key-id',
+          span: 12,
+          help: '在 https://console.aws.amazon.com/iam/ 申请 AWS Access Key'
+        },
+        {
+          name: 'apiSecret',
+          label: 'Secret Access Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-secret-access-key',
+          span: 12,
+          help: 'AWS Secret Access Key'
+        },
+        {
+          name: 'region',
+          label: 'AWS Region',
+          required: true,
+          inputType: 'text',
+          placeholder: 'us-east-1',
+          span: 12,
+          help: 'AWS 区域，如 us-east-1'
+        }
+      ],
+      // CometAPI
+      'CometAPI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://api.comet.com/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.comet.com/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Comet API 接口地址'
+        }
+      ],
+      // DeerAPI
+      'DeerAPI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://api.deerapi.com/ 平台申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.deerapi.com/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'DeerAPI 接口地址'
+        }
       ]
     }
   },
