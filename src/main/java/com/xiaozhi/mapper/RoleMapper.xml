@@ -43,10 +43,7 @@
     </sql>
 
     <sql id="TTS_Column_List">
-        CASE
-            WHEN tts_config.configId IS NOT NULL THEN tts_config.provider
-            ELSE (SELECT vc.provider FROM sys_voice_clone vc WHERE vc.configId = sys_role.ttsId LIMIT 1)
-        END AS ttsProvider
+        tts_config.provider AS ttsProvider
     </sql>
 
     <select id="query" resultMap="BaseResultMap">
