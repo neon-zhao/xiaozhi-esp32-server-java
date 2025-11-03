@@ -1,6 +1,6 @@
 ALTER TABLE `xiaozhi`.`sys_user` ADD COLUMN `wxOpenId` VARCHAR(100) NULL COMMENT '微信OpenId';
 ALTER TABLE `xiaozhi`.`sys_user` ADD COLUMN `wxUnionId` VARCHAR(100) NULL COMMENT '微信UnionId';
-ALTER TABLE `xiaozhi`.`sys_user` ADD COLUMN `roleId` int unsigned NOT NULL COMMENT '角色ID';
+ALTER TABLE `xiaozhi`.`sys_user` ADD COLUMN `roleId` int unsigned NOT NULL DEFAULT 2 COMMENT '角色ID';
 
 -- 创建权限表
 DROP TABLE IF EXISTS `xiaozhi`.`sys_permission`;

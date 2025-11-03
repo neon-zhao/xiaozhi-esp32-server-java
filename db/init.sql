@@ -48,8 +48,8 @@ CREATE TABLE `xiaozhi`.`sys_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert admin user only if it doesn't exist
-INSERT INTO xiaozhi.sys_user (username, password, state, isAdmin, name, createTime, updateTime)
-VALUES ('admin', '11cd9c061d614dcf37ec60c44c11d2ad', '1', '1', '小智', '2025-03-09 18:32:29', '2025-03-09 18:32:35');
+INSERT INTO xiaozhi.sys_user (username, password, state, isAdmin, roleId, name, createTime, updateTime)
+VALUES ('admin', '11cd9c061d614dcf37ec60c44c11d2ad', '1', '1', 1, '小智', '2025-03-09 18:32:29', '2025-03-09 18:32:35');
 
 update `xiaozhi`.`sys_user` set name = '小智' where username = 'admin';
 
