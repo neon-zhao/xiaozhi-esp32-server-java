@@ -386,8 +386,6 @@ public class UserController extends BaseController {
             String password = (String) loginRequest.get("password");
             String name = (String) loginRequest.get("name");
             String avatar = (String) loginRequest.get("avatar");
-            Integer tokenLimit = (Integer) loginRequest.get("tokenLimit");
-            String tokenNotify = (String) loginRequest.get("tokenNotify");
             
             SysUser userQuery = new SysUser();
 

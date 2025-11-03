@@ -34,7 +34,7 @@ CREATE TABLE `xiaozhi`.`sys_user` (
   `wxUnionId` VARCHAR(100) NULL COMMENT '微信UnionId',
   `tel` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `roleId` int unsigned NOT NULL COMMENT '角色ID',
+  `roleId` int unsigned NOT NULL DEFAULT 2 COMMENT '角色ID',
   `avatar` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像',
   `state` enum('1','0') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '1' COMMENT '1-正常 0-禁用',
   `loginIp` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
