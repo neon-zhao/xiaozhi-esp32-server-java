@@ -189,7 +189,8 @@ public class ChatModelFactory {
                 .model(model)
                 .temperature(temperature)
                 .topP(topP)
-                .maxCompletionTokens(200) // 在测试环境里控制长话短说，生产环境可适当放大。
+                // 注意：某些OpenAI兼容API（如豆包）可能不支持以下参数，如遇到400错误可尝试注释掉
+                // .maxCompletionTokens(200)
                 .maxTokens(2000)
                 .streamUsage(true)
                 .build();
