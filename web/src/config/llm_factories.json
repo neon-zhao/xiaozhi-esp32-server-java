@@ -1003,72 +1003,58 @@
             "status": "1",
             "llm": [
                 {
-                    "llm_name": "doubao-seed-1.6",
+                    "llm_name": "doubao-seed-1-6-250615",
                     "tags": "LLM,CHAT,256K,IMAGE2TEXT,REASONING",
                     "max_tokens": 256000,
                     "model_type": "chat",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "doubao-seed-1.6-lite",
+                    "llm_name": "doubao-seed-1-6-lite-251015",
                     "tags": "LLM,CHAT,256K,IMAGE2TEXT,REASONING",
                     "max_tokens": 256000,
                     "model_type": "chat",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "doubao-seed-1.6-flash",
+                    "llm_name": "doubao-seed-1-6-flash-250828",
                     "tags": "LLM,CHAT,256K,IMAGE2TEXT,FAST,REASONING",
                     "max_tokens": 256000,
                     "model_type": "chat",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "doubao-seed-1.6-thinking",
+                    "llm_name": "doubao-seed-1-6-thinking-250715",
                     "tags": "LLM,CHAT,256K,REASONING,IMAGE2TEXT",
                     "max_tokens": 256000,
                     "model_type": "chat",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "doubao-seed-1.6-vision",
+                    "llm_name": "doubao-seed-1-6-vision-250815",
                     "tags": "LLM,CHAT,256K,IMAGE2TEXT,REASONING,GUI",
                     "max_tokens": 256000,
                     "model_type": "image2text",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "deepseek-v3.1",
+                    "llm_name": "deepseek-v3-1-250821",
                     "tags": "LLM,CHAT,128K,REASONING",
                     "max_tokens": 128000,
                     "model_type": "chat",
                     "is_tools": true
                 },
                 {
-                    "llm_name": "doubao-1.5-pro-32k",
+                    "llm_name": "doubao-1-5-pro-32k-250115",
                     "tags": "LLM,CHAT,32K,CHARACTER",
                     "max_tokens": 32768,
                     "model_type": "chat",
                     "is_tools": false
                 },
                 {
-                    "llm_name": "doubao-embedding-large",
+                    "llm_name": "doubao-embedding-text-240715",
                     "tags": "TEXT EMBEDDING",
                     "max_tokens": 4096,
-                    "model_type": "embedding",
-                    "is_tools": false
-                },
-                {
-                    "llm_name": "doubao-embedding",
-                    "tags": "TEXT EMBEDDING",
-                    "max_tokens": 4096,
-                    "model_type": "embedding",
-                    "is_tools": false
-                },
-                {
-                    "llm_name": "doubao-embedding-vision",
-                    "tags": "TEXT EMBEDDING,IMAGE2TEXT,MULTIMODAL",
-                    "max_tokens": 128000,
                     "model_type": "embedding",
                     "is_tools": false
                 }
