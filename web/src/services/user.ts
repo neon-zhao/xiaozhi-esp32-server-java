@@ -28,7 +28,7 @@ export function register(data: {
   password: string
   verifyCode: string
 }) {
-  return http.post(api.user.add, data)
+  return http.postJSON(api.user.add, data)
 }
 
 /**
@@ -39,7 +39,7 @@ export function resetPassword(data: {
   code: string
   password: string
 }) {
-  return http.post(api.user.update, data)
+  return http.postJSON(api.user.update, data)
 }
 
 /**
@@ -53,7 +53,7 @@ export function checkUser(data: { username?: string; email?: string }) {
  * 发送邮箱验证码
  */
 export function sendEmailCaptcha(data: { email: string; type: string }) {
-  return http.post(api.user.sendEmailCaptcha, data)
+  return http.postJSON(api.user.sendEmailCaptcha, data)
 }
 
 /**
@@ -88,7 +88,7 @@ export function updateUser(data: Partial<UpdateUserParams>) {
  * 添加用户
  */
 export function addUser(data: Partial<User>) {
-  return http.post(api.user.add, data)
+  return http.postJSON(api.user.add, data)
 }
 
 
