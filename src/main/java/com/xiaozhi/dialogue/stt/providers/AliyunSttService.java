@@ -275,8 +275,7 @@ public class AliyunSttService implements SttService {
                             synchronized (result) {
                                 result.append(transcript);
                             }
-                            // 收到识别结果后立即关闭连接，避免等待客户端 VAD
-                            // 注意：不要在这里设置 isCompleted，让 onClose 回调来处理
+                            // 收到识别结果后关闭连接
                             if (conversationRef.get() != null && !isCompleted.get()) {
                                 try {
                                     conversationRef.get().close(1000, "transcription_completed");
@@ -329,9 +328,11 @@ public class AliyunSttService implements SttService {
             transcriptionParam.setInputAudioFormat("pcm");
             transcriptionParam.setInputSampleRate(AudioUtils.SAMPLE_RATE);
             
+            // 配置会话参数
             OmniRealtimeConfig config = OmniRealtimeConfig.builder()
                     .modalities(Collections.singletonList(OmniRealtimeModality.TEXT))
                     .transcriptionConfig(transcriptionParam)
+                    .enableTurnDetection(false)  // 关闭服务端VAD
                     .build();
             
             conversation.updateSession(config);
@@ -355,23 +356,11 @@ public class AliyunSttService implements SttService {
                         }
                     },
                     () -> {
-                        // 如果还未收到识别结果，通知服务器处理完成
+                        // 本地VAD检测到语音结束（SPEECH_END）时会触发此回调
+                        // 由于关闭了服务端VAD，需要手动调用 commit() 触发识别
                         if (!isCompleted.get()) {
-                            try {
-                                // 服务器端有 VAD 静音检测，创建响应以触发识别完成
-                                conversation.createResponse(null, null);
-                                // 等待一小段时间让服务器处理
-                                Thread.sleep(500);
-                                // 如果仍未完成，主动关闭连接
-                                if (isCompleted.compareAndSet(false, true)) {
-                                    conversation.close(1000, "audio_stream_ended");
-                                }
-                            } catch (Exception e) {
-                                logger.error("处理音频流结束时发生错误", e);
-                                if (isCompleted.compareAndSet(false, true)) {
-                                    latch.countDown();
-                                }
-                            }
+                            // 手动提交识别请求（关闭服务端VAD后必须手动commit）
+                            conversation.commit();
                         }
                     }
             );
