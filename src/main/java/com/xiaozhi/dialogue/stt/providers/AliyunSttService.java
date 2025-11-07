@@ -5,7 +5,15 @@ import com.alibaba.dashscope.audio.asr.recognition.RecognitionParam;
 import com.alibaba.dashscope.audio.asr.translation.TranslationRecognizerParam;
 import com.alibaba.dashscope.audio.asr.translation.TranslationRecognizerRealtime;
 import com.alibaba.dashscope.audio.asr.translation.results.TranslationRecognizerResult;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeCallback;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeConfig;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeConversation;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeModality;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeParam;
+import com.alibaba.dashscope.audio.omni.OmniRealtimeTranscriptionParam;
 import com.alibaba.dashscope.common.ResultCallback;
+import com.alibaba.dashscope.exception.NoApiKeyException;
+import com.google.gson.JsonObject;
 import com.xiaozhi.dialogue.stt.SttService;
 import com.xiaozhi.entity.SysConfig;
 import com.xiaozhi.utils.AudioUtils;
@@ -17,9 +25,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 import java.nio.ByteBuffer;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -57,6 +68,8 @@ public class AliyunSttService implements SttService {
         try {
             if (model.toLowerCase().contains("gummy")) {
                 return streamRecognitionGummy(audioSink);
+            } else if (model.toLowerCase().contains("qwen")) {
+                return streamRecognitionQwen(audioSink);
             } else {
                 // paraformer 逻辑
                 String actualModel = model;
@@ -216,6 +229,176 @@ public class AliyunSttService implements SttService {
                 translator.getDuplexApi().close(1000, "bye");
             } catch (Exception e) {
                 logger.error("关闭连接时发生错误", e);
+            }
+        }
+        
+        if (hasError.get()) {
+            return "";
+        }
+        
+        return result.toString();
+    }
+
+    /**
+     * Qwen 模型的流式识别（qwen3-asr-flash-realtime）
+     */
+    private String streamRecognitionQwen(Sinks.Many<byte[]> audioSink) {
+        StringBuilder result = new StringBuilder();
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean hasError = new AtomicBoolean(false);
+        AtomicBoolean isCompleted = new AtomicBoolean(false);
+        AtomicReference<OmniRealtimeConversation> conversationRef = new AtomicReference<>(null);
+        
+        // 初始化请求参数
+        OmniRealtimeParam param = OmniRealtimeParam.builder()
+                .model(model)
+                .url("wss://dashscope.aliyuncs.com/api-ws/v1/realtime")
+                .apikey(apiKey)
+                .build();
+        
+        try {
+            // 初始化回调接口
+            OmniRealtimeConversation conversation = new OmniRealtimeConversation(param, new OmniRealtimeCallback() {
+                @Override
+                public void onOpen() {
+                }
+
+                @Override
+                public void onEvent(JsonObject message) {
+                    String type = message.get("type").getAsString();
+                    switch(type) {
+                        case "session.created":
+                            break;
+                        case "conversation.item.input_audio_transcription.completed":
+                            String transcript = message.get("transcript").getAsString();
+                            logger.info("语音识别结果({}): {}", model, transcript);
+                            synchronized (result) {
+                                result.append(transcript);
+                            }
+                            // 收到识别结果后立即关闭连接，避免等待客户端 VAD
+                            // 注意：不要在这里设置 isCompleted，让 onClose 回调来处理
+                            if (conversationRef.get() != null && !isCompleted.get()) {
+                                try {
+                                    conversationRef.get().close(1000, "transcription_completed");
+                                } catch (Exception e) {
+                                    logger.error("关闭连接时发生错误", e);
+                                    // 如果关闭失败，手动触发完成
+                                    if (isCompleted.compareAndSet(false, true)) {
+                                        latch.countDown();
+                                    }
+                                }
+                            }
+                            break;
+                        case "input_audio_buffer.speech_started":
+                            break;
+                        case "input_audio_buffer.speech_stopped":
+                            break;
+                        case "response.done":
+                            if (isCompleted.compareAndSet(false, true)) {
+                                latch.countDown();
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                @Override
+                public void onClose(int code, String reason) {
+                    logger.info("Qwen 语音识别连接关闭 - code: {}, reason: {}", code, reason);
+                    if (isCompleted.compareAndSet(false, true)) {
+                        latch.countDown();
+                    }
+                }
+            });
+            
+            conversationRef.set(conversation);
+            
+            // 建立连接
+            try {
+                conversation.connect();
+            } catch (NoApiKeyException e) {
+                logger.error("API Key 无效", e);
+                hasError.set(true);
+                return "";
+            }
+            
+            // 配置转录参数
+            OmniRealtimeTranscriptionParam transcriptionParam = new OmniRealtimeTranscriptionParam();
+            // transcriptionParam.setLanguage("zh");
+            transcriptionParam.setInputAudioFormat("pcm");
+            transcriptionParam.setInputSampleRate(AudioUtils.SAMPLE_RATE);
+            
+            OmniRealtimeConfig config = OmniRealtimeConfig.builder()
+                    .modalities(Collections.singletonList(OmniRealtimeModality.TEXT))
+                    .transcriptionConfig(transcriptionParam)
+                    .build();
+            
+            conversation.updateSession(config);
+            
+            // 订阅音频流并发送数据
+            audioSink.asFlux().subscribe(
+                    audioChunk -> {
+                        try {
+                            // 将音频数据转换为 Base64
+                            String audioB64 = Base64.getEncoder().encodeToString(audioChunk);
+                            conversation.appendAudio(audioB64);
+                        } catch (Exception e) {
+                            logger.error("发送音频数据时发生错误", e);
+                        }
+                    },
+                    error -> {
+                        logger.error("音频流错误", error);
+                        conversation.close(1000, "error");
+                        if (isCompleted.compareAndSet(false, true)) {
+                            latch.countDown();
+                        }
+                    },
+                    () -> {
+                        // 如果还未收到识别结果，通知服务器处理完成
+                        if (!isCompleted.get()) {
+                            try {
+                                // 服务器端有 VAD 静音检测，创建响应以触发识别完成
+                                conversation.createResponse(null, null);
+                                // 等待一小段时间让服务器处理
+                                Thread.sleep(500);
+                                // 如果仍未完成，主动关闭连接
+                                if (isCompleted.compareAndSet(false, true)) {
+                                    conversation.close(1000, "audio_stream_ended");
+                                }
+                            } catch (Exception e) {
+                                logger.error("处理音频流结束时发生错误", e);
+                                if (isCompleted.compareAndSet(false, true)) {
+                                    latch.countDown();
+                                }
+                            }
+                        }
+                    }
+            );
+            
+            // 等待识别完成，最多90秒
+            boolean completed = latch.await(90, TimeUnit.SECONDS);
+            
+            if (!completed) {
+                logger.warn("语音识别超时({})", model);
+                // 超时情况下主动关闭连接
+                try {
+                    conversation.close(1000, "timeout");
+                } catch (Exception e) {
+                    logger.error("关闭连接时发生错误", e);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("流式识别过程中发生错误({})", model, e);
+            hasError.set(true);
+            // 发生异常时尝试关闭连接
+            try {
+                if (conversationRef.get() != null) {
+                    conversationRef.get().close(1000, "error");
+                }
+            } catch (Exception ex) {
+                logger.error("关闭连接时发生错误", ex);
             }
         }
         

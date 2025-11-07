@@ -526,17 +526,17 @@ public class VadService {
                 state.updateSilence(isSilence, frameDurationMs);
                 
                 // 每N帧输出一次VAD状态（在updateSilence之后，显示当前帧的状态）
-                if (state.getFrameCounter() % LOG_FRAME_INTERVAL == 0) {
-                     // 预先格式化浮点数
-                     String probStr = String.format("%.4f", speechProb);
-                     String energyStr = String.format("%.6f", energy);
-                     String thresholdStr = String.format("%.4f", speechThreshold);
-                     String avgEnergyStr = String.format("%.6f", state.getAvgEnergy());
+                // if (state.getFrameCounter() % LOG_FRAME_INTERVAL == 0) {
+                //      // 预先格式化浮点数
+                //      String probStr = String.format("%.4f", speechProb);
+                //      String energyStr = String.format("%.6f", energy);
+                //      String thresholdStr = String.format("%.4f", speechThreshold);
+                //      String avgEnergyStr = String.format("%.6f", state.getAvgEnergy());
 
-                    logger.info("VAD状态 - SessionId: {}, 帧: {}, 概率: {}, 能量: {}, 平均能量: {}, 阈值: {}, 静音: {}ms (连续{}帧), isSilent: {}, hasEnergy: {}",
-                            sessionId, state.getFrameCounter(), probStr, energyStr, avgEnergyStr, 
-                            thresholdStr, state.getSilenceDuration(), state.getConsecutiveSilenceFrames(), isSilence, hasEnergy);
-                }
+                //     logger.info("VAD状态 - SessionId: {}, 帧: {}, 概率: {}, 能量: {}, 平均能量: {}, 阈值: {}, 静音: {}ms (连续{}帧), isSilent: {}, hasEnergy: {}",
+                //             sessionId, state.getFrameCounter(), probStr, energyStr, avgEnergyStr, 
+                //             thresholdStr, state.getSilenceDuration(), state.getConsecutiveSilenceFrames(), isSilence, hasEnergy);
+                // }
 
                 // 处理状态转换
                 if (!state.isSpeaking() && isSpeech) {
