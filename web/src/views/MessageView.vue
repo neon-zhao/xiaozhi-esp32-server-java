@@ -324,7 +324,7 @@ fetchData()
           <template v-else-if="column.dataIndex === 'roleName'">
             <a-tooltip
               :title="record.roleDesc || record.roleName"
-              :mouse-enter-delay="500"
+              :mouse-enter-delay="0.5"
               placement="top"
             >
               <span v-if="record.roleName" class="ellipsis-text">{{ record.roleName }}</span>
@@ -339,7 +339,7 @@ fetchData()
 
           <!-- 消息内容列 -->
           <template v-else-if="column.dataIndex === 'message'">
-            <a-tooltip :title="record.message" :mouse-enter-delay="500" placement="topLeft">
+            <a-tooltip :title="record.message" :mouse-enter-delay="0.5" placement="topLeft">
               <span v-if="record.message" class="ellipsis-text">{{ record.message }}</span>
               <span v-else>-</span>
             </a-tooltip>

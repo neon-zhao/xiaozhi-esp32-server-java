@@ -459,7 +459,7 @@ fetchData()
                 style="cursor: pointer"
                 @click="() => handleEdit(record.deviceId)"
               >
-                <a-tooltip :title="`点击编辑: ${record.deviceName || '未命名'}`" :mouse-enter-delay="500">
+                <a-tooltip :title="`点击编辑: ${record.deviceName || '未命名'}`" :mouse-enter-delay="0.5">
                   <span v-if="record.deviceName" class="ellipsis-text">{{ record.deviceName }}</span>
                   <span v-else>-</span>
                 </a-tooltip>
@@ -491,7 +491,7 @@ fetchData()
             >
               <a-tooltip
                 :title="`点击编辑: ${record.roleDesc || getRoleName(record.roleId)}`"
-                :mouse-enter-delay="500"
+                :mouse-enter-delay="0.5"
                 placement="top"
               >
                 <span v-if="record.roleId" class="ellipsis-text">{{ getRoleName(record.roleId) }}</span>
