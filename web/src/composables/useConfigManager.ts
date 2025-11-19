@@ -120,7 +120,30 @@ export function useConfigManager(configType: ConfigType) {
     })
 
     llmFactoryData.value = factoryData
-    availableProviders.value = providers
+
+    // 按照 providerConfig 中 typeFields 的顺序排序
+    const typeFieldsKeys = Object.keys(configTypeMap.llm?.typeFields || {})
+    const sortedProviders = providers.sort((a, b) => {
+      const indexA = typeFieldsKeys.indexOf(a.value)
+      const indexB = typeFieldsKeys.indexOf(b.value)
+
+      // 如果都在 typeFields 中，按照 typeFields 的顺序
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB
+      }
+      // 如果只有 a 在 typeFields 中，a 排前面
+      if (indexA !== -1) {
+        return -1
+      }
+      // 如果只有 b 在 typeFields 中，b 排前面
+      if (indexB !== -1) {
+        return 1
+      }
+      // 如果都不在 typeFields 中，保持原顺序
+      return 0
+    })
+
+    availableProviders.value = sortedProviders
   }
 
   /**

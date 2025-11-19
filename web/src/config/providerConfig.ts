@@ -164,6 +164,50 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           help: '火山引擎豆包大模型 API 接口地址'
         }
       ],
+      // MiniMax
+      'MiniMax': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://platform.minimaxi.com/ 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.minimax.chat/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'MiniMax API 接口地址'
+        }
+      ],
+      // 腾讯混元
+      'Tencent Hunyuan': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://console.cloud.tencent.com/hunyuan/start 申请混元 API Key'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.hunyuan.cloud.tencent.com/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '腾讯混元大模型 API 接口地址'
+        }
+      ],
       // 百度文心
       'BaiChuan': [
         {
@@ -186,8 +230,8 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           help: '百川智能 API 接口地址'
         }
       ],
-      // MiniMax
-      'MiniMax': [
+      // Moonshot (月之暗面)
+      'Moonshot': [
         {
           name: 'apiKey',
           label: 'API Key',
@@ -195,17 +239,138 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           inputType: 'password',
           placeholder: 'your-api-key',
           span: 12,
-          help: '在 https://platform.minimaxi.com/ 申请'
+          help: '在 https://platform.moonshot.cn/console/api-keys 申请'
         },
         {
           name: 'apiUrl',
           label: 'API URL',
           required: true,
           inputType: 'text',
-          placeholder: 'https://api.minimax.chat/v1',
+          placeholder: 'https://api.moonshot.cn/v1',
           span: 12,
           suffix: '/chat/completions',
-          help: 'MiniMax API 接口地址'
+          help: 'Moonshot API 接口地址'
+        }
+      ],
+      // 硅基流动
+      'SILICONFLOW': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://cloud.siliconflow.cn/account/ak 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.siliconflow.cn/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '硅基流动 API 接口地址'
+        }
+      ],
+      // 百度文心一言
+      'BaiduYiyan': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application 申请千帆平台 API Key'
+        },
+        {
+          name: 'apiSecret',
+          label: 'Secret Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-secret-key',
+          span: 12,
+          help: '千帆平台 Secret Key'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1',
+          span: 12,
+          suffix: '/wenxinworkshop/chat/completions',
+          help: '百度千帆平台 API 接口地址'
+        }
+      ],
+      // 其他本地服务
+      'Ollama': [
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'http://localhost:11434/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '本地 Ollama 服务地址，需要先安装并启动 Ollama'
+        }
+      ],
+      'LM-Studio': [
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'http://localhost:1234/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: '本地 LM Studio 服务地址'
+        }
+      ],
+      'Azure-OpenAI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 Azure 门户中申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://your-resource-name.openai.azure.com',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'Azure OpenAI 服务地址'
+        }
+      ],
+      // xAI
+      'xAI': [
+        {
+          name: 'apiKey',
+          label: 'API Key',
+          required: true,
+          inputType: 'password',
+          placeholder: 'your-api-key',
+          span: 12,
+          help: '在 https://x.ai/api-keys 申请'
+        },
+        {
+          name: 'apiUrl',
+          label: 'API URL',
+          required: true,
+          inputType: 'text',
+          placeholder: 'https://api.x.ai/v1',
+          span: 12,
+          suffix: '/chat/completions',
+          help: 'xAI API 接口地址'
         }
       ],
       // Mistral
@@ -450,19 +615,6 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           help: 'DeepInfra API 接口地址'
         }
       ],
-      // 其他本地服务
-      'Ollama': [
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'http://localhost:11434/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: '本地 Ollama 服务地址，需要先安装并启动 Ollama'
-        }
-      ],
       'LocalAI': [
         {
           name: 'apiKey',
@@ -515,164 +667,6 @@ export const configTypeMap: Record<string, ConfigTypeInfo> = {
           span: 12,
           suffix: '/chat/completions',
           help: '本地 Xinference 服务地址'
-        }
-      ],
-      'LM-Studio': [
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'http://localhost:1234/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: '本地 LM Studio 服务地址'
-        }
-      ],
-      // Moonshot (月之暗面)
-      'Moonshot': [
-        {
-          name: 'apiKey',
-          label: 'API Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-api-key',
-          span: 12,
-          help: '在 https://platform.moonshot.cn/console/api-keys 申请'
-        },
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'https://api.moonshot.cn/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: 'Moonshot API 接口地址'
-        }
-      ],
-      // 硅基流动
-      'SILICONFLOW': [
-        {
-          name: 'apiKey',
-          label: 'API Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-api-key',
-          span: 12,
-          help: '在 https://cloud.siliconflow.cn/account/ak 申请'
-        },
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'https://api.siliconflow.cn/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: '硅基流动 API 接口地址'
-        }
-      ],
-      // 腾讯混元
-      'Tencent Hunyuan': [
-        {
-          name: 'apiKey',
-          label: 'Secret Id',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-secret-id',
-          span: 12,
-          help: '在 https://console.cloud.tencent.com/cam/capi 申请腾讯云 API 密钥'
-        },
-        {
-          name: 'apiSecret',
-          label: 'Secret Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-secret-key',
-          span: 12,
-          help: '腾讯云 API Secret Key'
-        },
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'https://api.hunyuan.cloud.tencent.com/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: '腾讯混元大模型 API 接口地址'
-        }
-      ],
-      // 讯飞星火
-      'XunFei Spark': [
-        {
-          name: 'appId',
-          label: 'App Id',
-          required: true,
-          inputType: 'text',
-          placeholder: 'your-app-id',
-          span: 12,
-          help: '在 https://console.xfyun.cn/ 申请讯飞开放平台 AppID'
-        },
-        {
-          name: 'apiKey',
-          label: 'API Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-api-key',
-          span: 12,
-          help: '讯飞开放平台 API Key'
-        },
-        {
-          name: 'apiSecret',
-          label: 'API Secret',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-api-secret',
-          span: 12,
-          help: '讯飞开放平台 API Secret'
-        },
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'https://spark-api.xf-yun.com/v1',
-          span: 12,
-          suffix: '/chat/completions',
-          help: '讯飞星火大模型 API 接口地址'
-        }
-      ],
-      // 百度文心一言
-      'BaiduYiyan': [
-        {
-          name: 'apiKey',
-          label: 'API Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-api-key',
-          span: 12,
-          help: '在 https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application 申请千帆平台 API Key'
-        },
-        {
-          name: 'apiSecret',
-          label: 'Secret Key',
-          required: true,
-          inputType: 'password',
-          placeholder: 'your-secret-key',
-          span: 12,
-          help: '千帆平台 Secret Key'
-        },
-        {
-          name: 'apiUrl',
-          label: 'API URL',
-          required: true,
-          inputType: 'text',
-          placeholder: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1',
-          span: 12,
-          suffix: '/wenxinworkshop/chat/completions',
-          help: '百度千帆平台 API 接口地址'
         }
       ],
       // HuggingFace
